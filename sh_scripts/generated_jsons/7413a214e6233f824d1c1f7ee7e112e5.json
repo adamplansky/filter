@@ -1,0 +1,39 @@
+{
+    "Category": [
+        "Anomaly.Connection"
+    ],
+    "Node": [
+        {
+            "Type": [
+                "Flow",
+                "Statistical",
+                "Content"
+            ],
+            "SW": [
+                "Nemea",
+                "dnstunnel_detection"
+            ],
+            "Name": "cz.cesnet.nemea.dnstunnel"
+        }
+    ],
+    "EventTime": "2016-02-27T13:35:19Z",
+    "Note": "Example of used domain name: 7441696572e315fd97fe137ccdcf6418.clo.footprintdns.com",
+    "Source": [
+        {
+            "IP4": [
+                "1.1.2.1"
+            ],
+            "Proto": [
+                "udp",
+                "dns"
+            ]
+        }
+    ],
+    "ID": "94c2d208-9b71-4ae9-a45e-ed94cfe0015b",
+    "DetectTime": "2016-02-27T13:41:33Z",
+    "Description": "Communication tunnel over DNS observed in requests",
+    "Format": "IDEA0",
+    "CeaseTime": "2016-02-27T13:41:33Z",
+    "FlowCount": 270,
+    "CreateTime": "2016-03-23T15:53:56Z"
+}

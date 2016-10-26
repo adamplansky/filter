@@ -1,0 +1,45 @@
+{
+    "DetectTime": "2016-03-23T16:50:47Z",
+    "Node": [
+        {
+            "Type": [
+                "Flow",
+                "Statistical"
+            ],
+            "SW": [
+                "Nemea",
+                "HostStatsNemea"
+            ],
+            "Name": "cz.cesnet.nemea.hoststats"
+        }
+    ],
+    "EventTime": "2016-03-22T12:12:51Z",
+    "Description": "SSH dictionary/bruteforce attack",
+    "ConnCount": 71,
+    "CeaseTime": "2016-03-22T12:17:59Z",
+    "Format": "IDEA0",
+    "Category": [
+        "Attempt.Login"
+    ],
+    "ID": "dd359048-6b12-4aea-9933-3565995566f5",
+    "Source": [
+        {
+            "IP4": [
+                "1.1.1.1"
+            ]
+        }
+    ],
+    "FlowCount": 142,
+    "CreateTime": "2016-03-23T16:50:47Z",
+    "Target": [
+        {
+            "Port": [
+                22
+            ],
+            "Proto": [
+                "tcp",
+                "ssh"
+            ]
+        }
+    ]
+}

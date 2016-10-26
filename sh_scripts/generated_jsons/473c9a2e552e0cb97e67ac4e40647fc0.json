@@ -1,0 +1,53 @@
+{
+    "Category": [
+        "Intrusion.Botnet"
+    ],
+    "Node": [
+        {
+            "Type": [
+                "Flow",
+                "Blacklist"
+            ],
+            "SW": [
+                "Nemea",
+                "ipblacklistfilter"
+            ],
+            "Name": "cz.cesnet.nemea.ipblacklistfilter"
+        }
+    ],
+    "EventTime": "2016-03-11T00:08:55Z",
+    "Note": "Destination IP 157.7.170.62 was found on blacklist.",
+    "Source": [
+        {
+            "Type": [
+                "Botnet",
+                "CC"
+            ],
+            "IP4": [
+                "157.7.170.62"
+            ],
+            "Proto": [
+                "icmp"
+            ]
+        },
+        {
+            "Type": [
+                "Botnet"
+            ],
+            "IP4": [
+                "10.0.2.15"
+            ],
+            "Proto": [
+                "icmp"
+            ]
+        }
+    ],
+    "PacketCount": 2,
+    "ID": "5c0bfe4c-c2ef-4442-8559-15a1da3bd560",
+    "DetectTime": "2016-03-11T00:08:56Z",
+    "Description": "10.0.2.15 connected to 157.7.170.62 which is on Zeus blacklist.",
+    "Format": "IDEA0",
+    "CeaseTime": "2016-03-11T00:08:56Z",
+    "ByteCount": 168,
+    "CreateTime": "2016-03-23T15:53:56Z"
+}

@@ -1,0 +1,44 @@
+{
+    "DetectTime": "2015-12-16T18:02:58Z",
+    "Category": [
+        "Attempt.Login"
+    ],
+    "Target": [
+        {
+            "Port": 2179,
+            "Proto": [
+                "tcp",
+                "vmrdp"
+            ]
+        }
+    ],
+    "FlowCount": 122,
+    "Description": "Multiple unsuccessful login attempts on VMRDP",
+    "Format": "IDEA0",
+    "Source": [
+        {
+            "IP4": [
+                "6.1.2.7"
+            ],
+            "Proto": [
+                "tcp",
+                "vmrdp"
+            ]
+        }
+    ],
+    "ID": "40c7901e-a516-4735-b614-7abe1ba946a6",
+    "Node": [
+        {
+            "Type": [
+                "Flow",
+                "Statistical"
+            ],
+            "SW": [
+                "Nemea",
+                "brute_force_detector"
+            ],
+            "Name": "cz.cesnet.nemea.brute_force_detector"
+        }
+    ],
+    "CreateTime": "2016-03-23T15:53:56Z"
+}

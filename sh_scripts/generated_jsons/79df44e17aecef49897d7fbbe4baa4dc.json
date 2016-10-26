@@ -1,0 +1,59 @@
+{
+    "Category": [
+        "Availibility.DDoS"
+    ],
+    "Node": [
+        {
+            "SW": [
+                "Nemea",
+                "amplification_detection"
+            ],
+            "Name": "amplification"
+        }
+    ],
+    "EventTime": "2015-10-26T08:05:05Z",
+    "Target": [
+        {
+            "InPacketCount": 2798,
+            "Proto": [
+                "udp",
+                "dns"
+            ],
+            "InFlowCount": 933,
+            "IP4": [
+                "43.231.6.123"
+            ],
+            "InByteCount": 3882916
+        }
+    ],
+    "Source": [
+        {
+            "InFlowCount": 1294,
+            "Proto": [
+                "udp",
+                "dns"
+            ],
+            "OutFlowCount": 933,
+            "OutByteCount": 3882916,
+            "InByteCount": 84110,
+            "InPacketCount": 1294,
+            "IP4": [
+                "195.113.82.246"
+            ],
+            "OutPacketCount": 2798
+        }
+    ],
+    "PacketCount": 2798,
+    "Type": [
+        "Flow",
+        "Statistical"
+    ],
+    "ID": "ed67f85a-5908-4e64-9359-a5e620ee2b59",
+    "DetectTime": "2015-10-26T08:20:11Z",
+    "Description": "DNS amplification",
+    "Format": "IDEA0",
+    "CeaseTime": "2015-10-26T08:20:11Z",
+    "ByteCount": 3882916,
+    "FlowCount": 933,
+    "CreateTime": "2016-03-23T15:53:55Z"
+}
