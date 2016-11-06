@@ -125,8 +125,8 @@ class Filter(threading.Thread):
                 self.counter += 1
                 print("processed files: ", self.counter)
                 threat_event = self.shared_array.pop()
-                _tuple = Price.calculate_price(threat_event)
-                self.heap_output.add(_tuple)
+                threat = Price.calculate_price(threat_event)
+                self.heap_output.add(threat)
 
 
 filter = Filter()
