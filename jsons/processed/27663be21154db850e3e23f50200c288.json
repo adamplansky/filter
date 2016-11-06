@@ -1,0 +1,55 @@
+{
+    "Category": [
+        "Attempt.Login"
+    ],
+    "Node": [
+        {
+            "Type": [
+                "Flow",
+                "Statistical",
+                "Content"
+            ],
+            "SW": [
+                "Nemea",
+                "voip_fraud_detection"
+            ],
+            "Name": "cz.cesnet.nemea.voipfrauddetection"
+        }
+    ],
+    "EventTime": "2016-03-10T09:45:54Z",
+    "Target": [
+        {
+            "SIPTo": [
+                "841111000@9.2.5.1:5060"
+            ],
+            "Proto": [
+                "sip"
+            ]
+        }
+    ],
+    "SuccessfulCalls": 0,
+    "TriedPrefixCount": 11,
+    "ID": "2c51eb9a-e3e5-49f3-ac22-a40780a3961b",
+    "DetectTime": "2016-03-10T10:45:36Z",
+    "Description": "SIP Dial-plan guessing",
+    "ConnCount": 11,
+    "Format": "IDEA0",
+    "Source": [
+        {
+            "UserAgent": [
+                "Asterisk PBX 11.21.1"
+            ],
+            "SIPFrom": [
+                ""
+            ],
+            "IP4": [
+                "1.1.1.1"
+            ],
+            "Proto": [
+                "sip"
+            ]
+        }
+    ],
+    "MaxPrefixLength": 9,
+    "CreateTime": "2016-03-23T15:53:56Z"
+}

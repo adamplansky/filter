@@ -1,4 +1,5 @@
-import youtube_dl
+import FolderDispatcher
 
 if __name__ == '__main__':
-    # youtube_dl.main()
+    f = FolderDispatcher()
+    f.folder_dispatcher()
