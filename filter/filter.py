@@ -8,6 +8,7 @@ import shutil
 import threading
 import random
 import heapq
+from datetime import datetime
 from pprint import pprint
 
 logging.basicConfig(
@@ -51,7 +52,7 @@ class FolderDispatcher(threading.Thread):
         while True:
 
             for filename in glob.glob(os.path.join(self.JSONS_PATH, '*.json')):
-                print(filename)
+                # print(filename)
                 with open(filename) as data_file:
                     try:
                         data = json.load(data_file)
@@ -64,6 +65,48 @@ class FolderDispatcher(threading.Thread):
                         logging.error("for file: {} error: {}".format(filename,e))
                         self.move_to_error_folder(filename)
                 self.shared_thread_event.set()
+class AlertExtractor:
+
+    @classmethod
+    def parse_datetime(cls, datetime_string):
+        return datetime.strptime(datetime_string, '%Y-%m-%dT%H:%M:%SZ')
+
+    @classmethod
+    def get_crated_at(cls, alert):
+        return cls.parse_datetime(alert["CreateTime"])
+
+    @classmethod
+    def get_detect_time(cls, alert):
+        return cls.parse_datetime(alert["DetectTime"])
+
+    @classmethod
+    def get_ips(cls, alert):
+        ips = []
+        if("Source" in alert):
+            ips += cls.parse_ips(alert["Source"])
+        return ips
+
+    @classmethod
+    def parse_array(cls, ary):
+        arr = []
+        for val in ary:
+            arr.append(val)
+        return arr
+
+    @classmethod
+    def parse_ips(cls, event):
+        ary_ips = []
+        for ev in event:
+            if("IP4" in ev):
+                ary_ips += cls.parse_array(ev["IP4"])
+            if("IP6" in ev):
+                ary_ips += cls.parse_array(ev["IP6"])
+        return ary_ips
+        #if(ip["IP6"]):
+        # muze bejt ip4 nebo ip6
+        # ip4 : [pole]
+        # viz: https://idea.cesnet.cz/en/index
+
 
 class HeapOutput:
     #how many probes do I have?
@@ -83,22 +126,63 @@ class HeapOutput:
             f.write(json_out)
 
     def add(self, threat):
+        #ips += AlertExtractor.get_ips(event)
+        #print("report IPS: ", ips)
+        print("threat:", threat)
+
+
         if self.PROBES_CAPACITY > len(self.heap):
-            print("push")
             heapq.heappush(self.heap,threat)
             self.create_json_threat_file(threat)
         else:
             pop_val = heapq.heappushpop(self.heap,threat)
             if pop_val != threat:
                 self.create_json_threat_file(threat)
-
 class Price:
+
+    CFG_JSON_PATH = '../config/static_prices.json'
 
     MAX_PRICE = 1000
     # algorithm for price calculation
+    init_call = True
+    cfg_static_prices = {}
+    @classmethod
+    def __init__(cls):
+        cls.init_call = False
+        cls.load_cfg()
+
+    @classmethod
+    def load_cfg(cls):
+        with open(cls.CFG_JSON_PATH) as data_file:
+            data = json.load(data_file)
+            for val in data:
+                for k,v in val.items():
+                    for kk,vv in v.items():
+                        _category = "{}.{}".format(k,kk)
+                        _price = vv
+                        cls.cfg_static_prices[_category] = int(_price)
+
+
+
+
     @classmethod
     def calculate_price(cls, event):
-        return (random.randint(1, cls.MAX_PRICE), event["ID"] )
+        if(cls.init_call != False): cls.__init__()
+        #ips = []
+        static_price = 0
+        for category in event["Category"]:
+            static_price += cls.cfg_static_prices[category]
+        ips = AlertExtractor.get_ips(event)
+        cr_time = AlertExtractor.get_crated_at(event)
+        detect_time = AlertExtractor.get_detect_time(event)
+        print("cr_time: ",cr_time)
+        print("detect_time: ", detect_time)
+        return (static_price, ips ) #event["ID"])
+        #ips += AlertExtractor.get_ips(event)
+        #print("report IPS: ", ips)
+        # print("CENA: ", static_price)
+
+        #return (random.randint(1, cls.MAX_PRICE), event["ID"] )
 
 class Filter(threading.Thread):
     def __init__(self):
@@ -123,7 +207,7 @@ class Filter(threading.Thread):
 
             else:
                 self.counter += 1
-                print("processed files: ", self.counter)
+                # print("processed files: ", self.counter)
                 threat_event = self.shared_array.pop()
                 threat = Price.calculate_price(threat_event)
                 self.heap_output.add(threat)

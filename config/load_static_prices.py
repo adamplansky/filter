@@ -8,7 +8,7 @@ import random
 import heapq
 from pprint import pprint
 
-CFG = 'static_prices.json'
+CFG = '../config/static_prices.json'
 
 
 def load_cfg():
