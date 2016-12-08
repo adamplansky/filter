@@ -1,0 +1,68 @@
+{
+   "Source" : [
+      {
+         "Port" : [
+            64236
+         ],
+         "Type" : [
+            "Malware"
+         ],
+         "IP4" : [
+            "147.230.154.176"
+         ],
+         "Note" : "Malware: B106"
+      }
+   ],
+   "ID" : "1-1478769718.326326-oPmD3haYNiZQ",
+   "Description" : "Botnet Drone",
+   "Target" : [
+      {
+         "IP4" : [
+            "204.95.99.142"
+         ],
+         "Port" : [
+            1991
+         ]
+      }
+   ],
+   "DetectTime" : "2016-11-09 22:58:49Z",
+   "Attach" : [
+      {
+         "Content" : "578587872;SinkHoleMessage;2016-11-09 23:58:49.232106;B106-Rebhip;147.230.154.176;64236;AS2852;204.95.99.142;1991;;CZ;83;Liberec;46015;50.7639;15.0653;0;0;;;;;;;;;;;",
+         "Note" : "Original info",
+         "ContentType" : "text/plain"
+      }
+   ],
+   "Category" : [
+      "Intrusion.Botnet",
+      "Malware"
+   ],
+   "Node" : [
+      {
+         "Name" : "cz.cesnet.au1.warden_filer",
+         "Type" : [
+            "Relay"
+         ]
+      },
+      {
+         "SW" : [
+            "X4"
+         ],
+         "Name" : "cz.cesnet.ext.x4",
+         "Type" : [
+            "External"
+         ]
+      }
+   ],
+   "Format" : "IDEA0",
+   "Note" : "Botnet: B106-Rebhip",
+   "_CESNET" : {
+      "Impact" : "System 147.230.154.176:64236 connected to 204.95.99.142:1991 and is part of B106-Rebhip botnet (B106)",
+      "EventTemplate" : "x4-001",
+      "StorageTime" : 1478913119,
+      "ResolvedAbuses" : [
+         "abuse@tul.cz"
+      ]
+   },
+   "CreateTime" : "2016-11-10 09:21:58Z"
+}

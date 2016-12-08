@@ -1,0 +1,64 @@
+{
+   "DetectTime" : "2016-11-10 19:04:00Z",
+   "Source" : [
+      {
+         "IP4" : [
+            "62.43.128.29"
+         ],
+         "Port" : [
+            53657
+         ]
+      }
+   ],
+   "ID" : "1-1478805039.393844-vSqHMuz6BOV8",
+   "CreateTime" : "2016-11-10 19:10:39Z",
+   "Node" : [
+      {
+         "Type" : [
+            "Relay"
+         ],
+         "Name" : "cz.cesnet.au1.warden_filer"
+      },
+      {
+         "SW" : [
+            "LaBrea"
+         ],
+         "Type" : [
+            "Connection",
+            "Tarpit"
+         ],
+         "Name" : "cz.cesnet.labrea"
+      }
+   ],
+   "Target" : [
+      {
+         "IP4" : [
+            "195.113.252.33"
+         ],
+         "Port" : [
+            666
+         ]
+      }
+   ],
+   "ConnCount" : 1,
+   "CeaseTime" : "2016-11-10 19:04:00Z",
+   "Format" : "IDEA0",
+   "Description" : "Connection attempt",
+   "Attach" : [
+      {
+         "Content" : "1478804640 Initial Connect - tarpitting: 62.43.128.29 53657 -> 195.113.252.33 666",
+         "Type" : [
+            "Syslog"
+         ],
+         "ContentType" : "text/plain"
+      }
+   ],
+   "Category" : [
+      "Recon.Scanning"
+   ],
+   "_CESNET" : {
+      "StorageTime" : 1478944539,
+      "Impact" : "Remote host 62.43.128.29:53657 connected to honeypot to port 666",
+      "EventTemplate" : "labrea-001"
+   }
+}

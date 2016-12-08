@@ -1,0 +1,46 @@
+{
+   "Format" : "IDEA0",
+   "FlowCount" : 261458,
+   "Description" : "Abnormally high number of packets received by 64.207.128.246 (probably flooding DoS attack)",
+   "Category" : [
+      "Availability.DoS"
+   ],
+   "_CESNET" : {
+      "StorageTime" : 1478944134
+   },
+   "DetectTime" : "2016-11-10 19:09:40Z",
+   "Source" : [
+      {
+         "Note" : "Count of sources is approximate",
+         "Count" : 18
+      }
+   ],
+   "ID" : "f153a028-9f22-4c41-8ba7-f4e0f44e40ef",
+   "CreateTime" : "2016-11-10 19:09:40Z",
+   "WinEndTime" : "2016-11-10 19:05:00Z",
+   "Node" : [
+      {
+         "Name" : "cz.cesnet.hoststats",
+         "Type" : [
+            "Flow",
+            "Statistical"
+         ],
+         "AggrWin" : "00:05:00",
+         "SW" : [
+            "HostStats"
+         ]
+      }
+   ],
+   "Target" : [
+      {
+         "OutPacketCount" : 100,
+         "OutFlowCount" : 100,
+         "InPacketCount" : 261459,
+         "InFlowCount" : 261458,
+         "IP4" : [
+            "64.207.128.246"
+         ]
+      }
+   ],
+   "WinStartTime" : "2016-11-10 19:00:00Z"
+}

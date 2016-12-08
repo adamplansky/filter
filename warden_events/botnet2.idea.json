@@ -1,0 +1,66 @@
+{
+   "CreateTime" : "2016-11-10 20:04:34Z",
+   "Source" : [
+      {
+         "IP4" : [
+            "8.5.1.43"
+         ],
+         "Type" : [
+            "Botnet",
+            "CC"
+         ],
+         "Proto" : [
+            "tcp"
+         ],
+         "Port" : [
+            80
+         ]
+      },
+      {
+         "IP4" : [
+            "147.230.73.179"
+         ],
+         "Proto" : [
+            "tcp"
+         ],
+         "Port" : [
+            51119
+         ],
+         "Type" : [
+            "Botnet"
+         ]
+      }
+   ],
+   "ByteCount" : 599,
+   "ID" : "e7dbd950-5841-492e-b6f2-18a0c199ea53",
+   "DetectTime" : "2016-11-10 20:03:20Z",
+   "Node" : [
+      {
+         "Name" : "cz.cesnet.nemea.ipblacklist",
+         "Type" : [
+            "Flow",
+            "Blacklist"
+         ],
+         "SW" : [
+            "Nemea",
+            "ipblacklistfilter"
+         ]
+      }
+   ],
+   "EventTime" : "2016-11-10 20:03:20Z",
+   "PacketCount" : 3,
+   "CeaseTime" : "2016-11-10 20:03:20Z",
+   "Format" : "IDEA0",
+   "Description" : "147.230.73.179 connected to 8.5.1.43 which is on Zeus blacklist.",
+   "_CESNET" : {
+      "ResolvedAbuses" : [
+         "abuse@tul.cz"
+      ],
+      "StorageTime" : 1478947499
+   },
+   "Note" : "Destination IP 8.5.1.43 was found on blacklist.",
+   "Category" : [
+      "Intrusion.Botnet",
+      "Test"
+   ]
+}

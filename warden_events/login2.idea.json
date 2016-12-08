@@ -1,0 +1,51 @@
+{
+   "DetectTime" : "2016-11-10 19:34:20Z",
+   "Target" : [
+      {
+         "Anonymised" : true,
+         "Proto" : [
+            "tcp",
+            "ssh"
+         ],
+         "IP4" : [
+            "158.196.0.0/16"
+         ],
+         "Port" : [
+            22
+         ]
+      }
+   ],
+   "Category" : [
+      "Attempt.Login"
+   ],
+   "Source" : [
+      {
+         "IP4" : [
+            "78.62.213.166"
+         ]
+      }
+   ],
+   "ID" : "a834ec05-4af2-4b72-abeb-0e9b25bf1b5e",
+   "_CESNET" : {
+      "StorageTime" : 1478946954
+   },
+   "WinStartTime" : "2016-11-10 19:30:02Z",
+   "ConnCount" : 1,
+   "WinEndTime" : "2016-11-10 19:35:02Z",
+   "Node" : [
+      {
+         "Name" : "cz.vsb.kippo",
+         "AggrWin" : "00:05:00",
+         "SW" : [
+            "Kippo"
+         ],
+         "Type" : [
+            "Connection",
+            "Honeypot",
+            "Recon"
+         ]
+      }
+   ],
+   "Note" : "SSH login attempt",
+   "Format" : "IDEA0"
+}

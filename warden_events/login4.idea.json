@@ -1,0 +1,67 @@
+{
+   "Node" : [
+      {
+         "Name" : "org.liberouter.collector_invea.flowmonads",
+         "Type" : [
+            "Relay"
+         ]
+      }
+   ],
+   "AltNames" : [
+      "ADS-855061"
+   ],
+   "EventTime" : "2016-11-10 18:29:49Z",
+   "Category" : [
+      "Attempt.Login",
+      "Test"
+   ],
+   "Attach" : [
+      {
+         "Content" : "855061\t2016-11-10 20:30:00\t2016-11-10 20:29:49\tRDPDICT\tRDP attack\tSecurity issues\tCritical\tContinuation of attack to 15 targets (whole attack). Current statistics: attempts: 1, total upload: 5.78 KiB, maximal upload: 5.78 KiB. Single attack.\t3389\tTCP\t188.230.198.130\t188-230-198-130.dynamic.t-2.net\t212.51.216.210, 212.51.216.137, 212.51.216.221, 212.51.216.209, 212.51.216.220, 212.51.216.205, 212.51.212.157, 212.51.218.136, 212.51.216.216, 212.51.221.204\tDefault\t ",
+         "Type" : [
+            "OrigData"
+         ],
+         "ContentType" : "text/csv"
+      }
+   ],
+   "Target" : [
+      {
+         "Port" : [
+            3389
+         ],
+         "IP4" : [
+            "212.51.216.210",
+            "212.51.216.137",
+            "212.51.216.221",
+            "212.51.216.209",
+            "212.51.216.220",
+            "212.51.216.205",
+            "212.51.212.157",
+            "212.51.218.136",
+            "212.51.216.216",
+            "212.51.221.204"
+         ],
+         "Proto" : [
+            "TCP"
+         ]
+      }
+   ],
+   "DetectTime" : "2016-11-10 18:30:00Z",
+   "Description" : "RDP attack",
+   "ID" : "2ee98f31-5c6c-4b29-85f0-3a4467ac94d4",
+   "Source" : [
+      {
+         "Hostname" : [
+            "188-230-198-130.dynamic.t-2.net"
+         ],
+         "IP4" : [
+            "188.230.198.130"
+         ]
+      }
+   ],
+   "_CESNET" : {
+      "StorageTime" : 1478947277
+   },
+   "Note" : "Continuation of attack to 15 targets (whole attack). Current statistics: attempts: 1, total upload: 5.78 KiB, maximal upload: 5.78 KiB. Single attack.",
+   "Format" : "IDEA0"
+}

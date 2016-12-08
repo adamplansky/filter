@@ -1,0 +1,57 @@
+{
+   "Node" : [
+      {
+         "Type" : [
+            "Relay"
+         ],
+         "Name" : "cz.cesnet.au1.warden_filer"
+      },
+      {
+         "Type" : [
+            "External",
+            "Recon"
+         ],
+         "Name" : "cesnet.au1",
+         "SW" : [
+            "SSERV"
+         ]
+      }
+   ],
+   "Source" : [
+      {
+         "Proto" : [
+            "udp",
+            "qotd"
+         ],
+         "Port" : [
+            17
+         ],
+         "IP4" : [
+            "158.194.83.197"
+         ]
+      }
+   ],
+   "ID" : "1-1478766438.840777-WLj60TgPEDfr",
+   "DetectTime" : "2016-11-09 13:24:20Z",
+   "CreateTime" : "2016-11-10 08:27:18Z",
+   "Category" : [
+      "Vulnerable.Config"
+   ],
+   "_CESNET" : {
+      "Impact" : "System provides UDP QOTD service and can be misused for massive DDoS attack",
+      "ResolvedAbuses" : [
+         "abuse@upol.cz"
+      ],
+      "EventTemplate" : "sserv-011",
+      "StorageTime" : 1478910795
+   },
+   "Description" : "Scan QOTD",
+   "Attach" : [
+      {
+         "Note" : "Original info",
+         "Content" : "\"2016-11-09 13:24:20\",\"158.194.83.197\",\"udp\",17,,\"qotd\",\"_We want a few mad people now. See where the sane ones have landed us!_?? George Bernard Shaw (1856-1950)?\",2852,\"CZ\",\"OLOMOUCKY KRAJ\",\"OLOMOUC\",0,0,\"Information Technology\"",
+         "ContentType" : "text/plain"
+      }
+   ],
+   "Format" : "IDEA0"
+}

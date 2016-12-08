@@ -10,6 +10,26 @@ import random
 import heapq
 from datetime import datetime
 from pprint import pprint
+from math import log
+
+
+first = lambda h: 2**h - 1      # H stands for level height
+last = lambda h: first(h + 1)
+level = lambda heap, h: heap[first(h):last(h)]
+prepare = lambda e, field: str(e).center(field)
+
+
+def hprint(heap, width=None):
+    if width is None:
+        width = max(len(str(e)) for e in heap)
+    height = int(log(len(heap), 2)) + 1
+    gap = ' ' * width
+    for h in range(height):
+        below = 2 ** (height - h - 1)
+        field = (2 * below - 1) * width
+        print(gap.join(prepare(e, field) for e in level(heap, h)))
+
+
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -56,7 +76,7 @@ class FolderDispatcher(threading.Thread):
                 with open(filename) as data_file:
                     try:
                         data = json.load(data_file)
-                        print(data)
+                        # print(data)
                         # todo: some preprocess of data
                         # differents system can have different JSONs structure
                         self.shared_array.append( data )
@@ -120,8 +140,9 @@ class HeapOutput:
         if not os.path.exists(self.JSONS_PROBES_PATH):
             os.makedirs(self.JSONS_PROBES_PATH)
 
-        # threat[1] = threat[ID]
-        threat_file_name = "{}{}.json".format(self.JSONS_PROBES_PATH,threat[1])
+        # threat[1] = threat[Ip]
+        ip = threat[1]
+        threat_file_name = "{}{}.json".format(self.JSONS_PROBES_PATH,ip)
         with open(threat_file_name, 'w') as f:
             f.write(json_out)
 
@@ -130,7 +151,6 @@ class HeapOutput:
         #print("report IPS: ", ips)
         print("threat:", threat)
 
-
         if self.PROBES_CAPACITY > len(self.heap):
             heapq.heappush(self.heap,threat)
             self.create_json_threat_file(threat)
@@ -138,6 +158,18 @@ class HeapOutput:
             pop_val = heapq.heappushpop(self.heap,threat)
             if pop_val != threat:
                 self.create_json_threat_file(threat)
+        #print it
+        print('---------------------------------------------------------------')
+        if self.heap: hprint(self.heap)
+
+    def recalculte_price():
+        #PRICE.calculate_price
+        #
+
+        pass
+
+    def recalculate_all_prices():
+        pass
 class Price:
 
     CFG_JSON_PATH = '../config/static_prices.json'
@@ -162,22 +194,18 @@ class Price:
                         _price = vv
                         cls.cfg_static_prices[_category] = int(_price)
 
-
-
-
     @classmethod
     def calculate_price(cls, event):
         if(cls.init_call != False): cls.__init__()
-        #ips = []
         static_price = 0
         for category in event["Category"]:
             static_price += cls.cfg_static_prices[category]
-        ips = AlertExtractor.get_ips(event)
         cr_time = AlertExtractor.get_crated_at(event)
         detect_time = AlertExtractor.get_detect_time(event)
-        print("cr_time: ",cr_time)
-        print("detect_time: ", detect_time)
-        return (static_price, ips ) #event["ID"])
+        #print("cr_time: ",cr_time)
+        #print("detect_time: ", detect_time)
+        ips = AlertExtractor.get_ips(event)
+        return (static_price, ips )
         #ips += AlertExtractor.get_ips(event)
         #print("report IPS: ", ips)
         # print("CENA: ", static_price)

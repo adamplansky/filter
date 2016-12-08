@@ -1,0 +1,87 @@
+{
+   "Ref" : [
+      "https://ftas.cesnet.cz/ftas/stat.pl?select_output=1212&select_output-use=yes&query_style=advanced&advanced_query=src_ip=168.1.128.59&first=2016%2F11%2F10%2020%3A23%3A21&last=2016%2F11%2F10%2020%3A25%3A29&use_all_fields=1"
+   ],
+   "PacketCount" : 6940,
+   "_CESNET" : {
+      "StorageTime" : 1478946145
+   },
+   "Note" : "168.1.128.59 (source IP) - found 6940 flows (limit 'Flow-Cnt>=1000 flows/s or Flow-Cnt>=0.333 flows/s and Pkts-estimated>=1000 p/s') within period of 3 seconds. Next message not before 16/11/10 20:25:54 CET +0100 in case of continuous detection. Notes - detector uses extrapolated values (bytes, packets, flowcnt) in case of sampled flows; detector fragments long (duration) flows into 3s intervals for evaluation purposes.",
+   "Category" : [
+      "Anomaly.Traffic"
+   ],
+   "AvgPacketSize" : 40,
+   "CreateTime" : "2016-11-10 19:25:03Z",
+   "Duration" : 2,
+   "ByteCount" : 277600,
+   "Target" : [
+      {
+         "PortCount" : 1,
+         "IP4Count" : 4,
+         "ProtoCount" : 1,
+         "IP4" : [
+            "147.228.118.10",
+            "147.228.144.24"
+         ],
+         "Note" : "Counts are measured up to 4 distinct values; arrays are cropped to 2 distinct values.",
+         "Proto" : [
+            "tcp"
+         ],
+         "Port" : [
+            587
+         ],
+         "Type" : [
+            "Incomplete"
+         ]
+      }
+   ],
+   "WinEndTime" : "2016-11-10 19:24:24Z",
+   "Node" : [
+      {
+         "Type" : [
+            "Relay"
+         ],
+         "Name" : "cz.cesnet.ftas"
+      },
+      {
+         "Name" : "cz.cesnet.gc15",
+         "SW" : [
+            "FTAS"
+         ],
+         "Tags" : [
+            "Flow"
+         ]
+      }
+   ],
+   "Format" : "IDEA0",
+   "FlowCount" : 6940,
+   "Attach" : [
+      {
+         "Note" : "Traffic sample (20 records max.)",
+         "Content" : "Forwarded: 168.1.128.59    tcp(6)/42029 --> 147.228.118.10  tcp(6)/submission(587): 40/800 B, 1/20 p, 40 Bpp, 19:24:21[GMT], 20:24:21[CET +0100], +0.000000 s, tos=10100100, tcp_flags=syn(2), flow_source=Prague 1: R148 - border router (AMS-IX, GEANT, LHCONE)(1251), src_if=308, dst_if=175\nForwarded: 168.1.128.59    tcp(6)/42029 --> 147.231.116.160 tcp(6)/submission(587): 40/800 B, 1/20 p, 40 Bpp, 19:24:21[GMT], 20:24:21[CET +0100], +0.000000 s, tos=10100100, tcp_flags=syn(2), flow_source=Prague 1: R148 - border router (AMS-IX, GEANT, LHCONE)(1251), src_if=308, dst_if=175\nForwarded: 168.1.128.59    tcp(6)/42029 --> 147.230.226.239 tcp(6)/submission(587): 40/800 B, 1/20 p, 40 Bpp, 19:24:21[GMT], 20:24:21[CET +0100], +0.000000 s, tos=10100100, tcp_flags=syn(2), flow_source=Prague 1: R148 - border router (AMS-IX, GEANT, LHCONE)(1251), src_if=308, dst_if=175\nForwarded: 168.1.128.59    tcp(6)/42029 --> 147.228.144.24  tcp(6)/submission(587): 40/800 B, 1/20 p, 40 Bpp, 19:24:21[GMT], 20:24:21[CET +0100], +0.000000 s, tos=10100100, tcp_flags=syn(2), flow_source=Prague 1: R148 - border router (AMS-IX, GEANT, LHCONE)(1251), src_if=308, dst_if=175\nForwarded: 168.1.128.59    tcp(6)/42029 --> 147.231.137.154 tcp(6)/submission(587): 40/800 B, 1/20 p, 40 Bpp, 19:24:21[GMT], 20:24:21[CET +0100], +0.000000 s, tos=10100100, tcp_flags=syn(2), flow_source=Prague 1: R148 - border router (AMS-IX, GEANT, LHCONE)(1251), src_if=308, dst_if=175\nForwarded: 168.1.128.59    tcp(6)/42029 --> 147.228.101.22  tcp(6)/submission(587): 40/800 B, 1/20 p, 40 Bpp, 19:24:21[GMT], 20:24:21[CET +0100], +0.000000 s, tos=10100100, tcp_flags=syn(2), flow_source=Prague 1: R148 - border router (AMS-IX, GEANT, LHCONE)(1251), src_if=308, dst_if=175\nForwarded: 168.1.128.59    tcp(6)/42029 --> 147.228.43.119  tcp(6)/submission(587): 40/800 B, 1/20 p, 40 Bpp, 19:24:21[GMT], 20:24:21[CET +0100], +0.000000 s, tos=10100100, tcp_flags=syn(2), flow_source=Prague 1: R148 - border router (AMS-IX, GEANT, LHCONE)(1251), src_if=308, dst_if=175\nForwarded: 168.1.128.59    tcp(6)/42029 --> 147.229.79.87   tcp(6)/submission(587): 40/800 B, 1/20 p, 40 Bpp, 19:24:21[GMT], 20:24:21[CET +0100], +0.000000 s, tos=10100100, tcp_flags=syn(2), flow_source=Prague 1: R148 - border router (AMS-IX, GEANT, LHCONE)(1251), src_if=308, dst_if=175\nForwarded: 168.1.128.59    tcp(6)/42029 --> 147.230.121.229 tcp(6)/submission(587): 40/800 B, 1/20 p, 40 Bpp, 19:24:21[GMT], 20:24:21[CET +0100], +0.000000 s, tos=10100100, tcp_flags=syn(2), flow_source=Prague 1: R148 - border router (AMS-IX, GEANT, LHCONE)(1251), src_if=308, dst_if=175\nForwarded: 168.1.128.59    tcp(6)/42029 --> 147.231.77.238  tcp(6)/submission(587): 40/800 B, 1/20 p, 40 Bpp, 19:24:21[GMT], 20:24:21[CET +0100], +0.000000 s, tos=10100100, tcp_flags=syn(2), flow_source=Prague 1: R148 - border router (AMS-IX, GEANT, LHCONE)(1251), src_if=308, dst_if=175\nForwarded: 168.1.128.59    tcp(6)/42029 --> 147.230.247.143 tcp(6)/submission(587): 40/800 B, 1/20 p, 40 Bpp, 19:24:21[GMT], 20:24:21[CET +0100], +0.000000 s, tos=10100100, tcp_flags=syn(2), flow_source=Prague 1: R148 - border router (AMS-IX, GEANT, LHCONE)(1251), src_if=308, dst_if=175\nForwarded: 168.1.128.59    tcp(6)/42029 --> 147.230.198.205 tcp(6)/submission(587): 40/800 B, 1/20 p, 40 Bpp, 19:24:21[GMT], 20:24:21[CET +0100], +0.000000 s, tos=10100100, tcp_flags=syn(2), flow_source=Prague 1: R148 - border router (AMS-IX, GEANT, LHCONE)(1251), src_if=308, dst_if=175\nForwarded: 168.1.128.59    tcp(6)/42029 --> 147.231.28.138  tcp(6)/submission(587): 40/800 B, 1/20 p, 40 Bpp, 19:24:21[GMT], 20:24:21[CET +0100], +0.000000 s, tos=10100100, tcp_flags=syn(2), flow_source=Prague 1: R148 - border router (AMS-IX, GEANT, LHCONE)(1251), src_if=308, dst_if=175\nForwarded: 168.1.128.59    tcp(6)/42029 --> 147.230.180.229 tcp(6)/submission(587): 40/800 B, 1/20 p, 40 Bpp, 19:24:21[GMT], 20:24:21[CET +0100], +0.000000 s, tos=10100100, tcp_flags=syn(2), flow_source=Prague 1: R148 - border router (AMS-IX, GEANT, LHCONE)(1251), src_if=308, dst_if=175\nForwarded: 168.1.128.59    tcp(6)/42029 --> 147.230.161.0   tcp(6)/submission(587): 40/800 B, 1/20 p, 40 Bpp, 19:24:21[GMT], 20:24:21[CET +0100], +0.000000 s, tos=10100100, tcp_flags=syn(2), flow_source=Prague 1: R148 - border router (AMS-IX, GEANT, LHCONE)(1251), src_if=308, dst_if=175\nForwarded: 168.1.128.59    tcp(6)/42029 --> 147.230.97.66   tcp(6)/submission(587): 40/800 B, 1/20 p, 40 Bpp, 19:24:21[GMT], 20:24:21[CET +0100], +0.000000 s, tos=10100100, tcp_flags=syn(2), flow_source=Prague 1: R148 - border router (AMS-IX, GEANT, LHCONE)(1251), src_if=308, dst_if=175\nForwarded: 168.1.128.59    tcp(6)/42029 --> 147.231.209.102 tcp(6)/submission(587): 40/800 B, 1/20 p, 40 Bpp, 19:24:21[GMT], 20:24:21[CET +0100], +0.000000 s, tos=10100100, tcp_flags=syn(2), flow_source=Prague 1: R148 - border router (AMS-IX, GEANT, LHCONE)(1251), src_if=308, dst_if=175\nForwarded: 168.1.128.59    tcp(6)/42029 --> 147.228.253.120 tcp(6)/submission(587): 40/800 B, 1/20 p, 40 Bpp, 19:24:21[GMT], 20:24:21[CET +0100], +0.000000 s, tos=10100100, tcp_flags=syn(2), flow_source=Prague 1: R148 - border router (AMS-IX, GEANT, LHCONE)(1251), src_if=308, dst_if=175\nForwarded: 168.1.128.59    tcp(6)/42029 --> 147.228.236.91  tcp(6)/submission(587): 40/800 B, 1/20 p, 40 Bpp, 19:24:21[GMT], 20:24:21[CET +0100], +0.000000 s, tos=10100100, tcp_flags=syn(2), flow_source=Prague 1: R148 - border router (AMS-IX, GEANT, LHCONE)(1251), src_if=308, dst_if=175\nForwarded: 168.1.128.59    tcp(6)/42029 --> 147.231.65.120  tcp(6)/submission(587): 40/800 B, 1/20 p, 40 Bpp, 19:24:21[GMT], 20:24:21[CET +0100], +0.000000 s, tos=10100100, tcp_flags=syn(2), flow_source=Prague 1: R148 - border router (AMS-IX, GEANT, LHCONE)(1251), src_if=308, dst_if=175",
+         "ContentType" : "text/csv"
+      }
+   ],
+   "Description" : "TCP SYN against internal IP address ranges, sources - DETECTED traffic anomaly",
+   "ID" : "1478805903_gc15.cesnet.cz_1212_src_ip_168.1.128.59",
+   "Source" : [
+      {
+         "PortCount" : 1,
+         "IP4" : [
+            "168.1.128.59"
+         ],
+         "ProtoCount" : 1,
+         "Port" : [
+            42029
+         ],
+         "Proto" : [
+            "tcp"
+         ],
+         "Type" : [
+            "Incomplete"
+         ]
+      }
+   ],
+   "DetectTime" : "2016-11-10 19:25:03Z",
+   "WinStartTime" : "2016-11-10 19:24:21Z"
+}

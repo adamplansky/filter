@@ -1,0 +1,52 @@
+{
+   "Format" : "IDEA0",
+   "Category" : [
+      "Recon.Scanning"
+   ],
+   "_CESNET" : {
+      "StorageTime" : 1478945031
+   },
+   "DetectTime" : "2016-11-10 19:10:30Z",
+   "Source" : [
+      {
+         "Port" : [
+            55077
+         ],
+         "IP4" : [
+            "93.122.194.93"
+         ]
+      }
+   ],
+   "ID" : "b717cb99-1a96-417e-bb9f-ee5cbef19673",
+   "Target" : [
+      {
+         "Anonymised" : true,
+         "Port" : [
+            23
+         ],
+         "Proto" : [
+            "tcp"
+         ],
+         "IP4" : [
+            "195.113.0.0/16"
+         ]
+      }
+   ],
+   "ConnCount" : 1,
+   "WinStartTime" : "2016-11-10 19:10:19Z",
+   "Node" : [
+      {
+         "Type" : [
+            "Connection",
+            "Honeypot",
+            "Recon"
+         ],
+         "Name" : "cz.cesnet.kryten.dionaea",
+         "AggrWin" : "00:05:00",
+         "SW" : [
+            "Dionaea"
+         ]
+      }
+   ],
+   "WinEndTime" : "2016-11-10 19:15:19Z"
+}

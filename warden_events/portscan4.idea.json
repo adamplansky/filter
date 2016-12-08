@@ -1,0 +1,64 @@
+{
+   "Category" : [
+      "Recon.Scanning",
+      "Test"
+   ],
+   "Description" : "Port scanning",
+   "AltNames" : [
+      "ADS-855046"
+   ],
+   "Attach" : [
+      {
+         "Type" : [
+            "OrigData"
+         ],
+         "ContentType" : "text/csv",
+         "Content" : "855046\t2016-11-10 19:25:42\t2016-11-10 19:25:42\tSCANS\tPort scanning\tSecurity issues\tHigh\thorizontal TCP SYN scan (attempts with response: 0, attempts without response: 23577, targets: 23577, port(s): 22).\t22\tTCP\t23.249.164.204\t \t141.201.0.0, 141.201.0.4, 141.201.0.17, 141.201.0.18, 141.201.0.27, 141.201.0.53, 141.201.0.56, 141.201.0.58, 141.201.0.60, 141.201.0.67\tDefault\t "
+      }
+   ],
+   "EventTime" : "2016-11-10 17:25:42Z",
+   "Target" : [
+      {
+         "Proto" : [
+            "TCP"
+         ],
+         "IP4" : [
+            "141.201.0.0",
+            "141.201.0.4",
+            "141.201.0.17",
+            "141.201.0.18",
+            "141.201.0.27",
+            "141.201.0.53",
+            "141.201.0.56",
+            "141.201.0.58",
+            "141.201.0.60",
+            "141.201.0.67"
+         ],
+         "Port" : [
+            22
+         ]
+      }
+   ],
+   "DetectTime" : "2016-11-10 17:25:42Z",
+   "Note" : "horizontal TCP SYN scan (attempts with response: 0, attempts without response: 23577, targets: 23577, port(s): 22).",
+   "Node" : [
+      {
+         "Name" : "org.liberouter.collector_invea.flowmonads",
+         "Type" : [
+            "Relay"
+         ]
+      }
+   ],
+   "Format" : "IDEA0",
+   "_CESNET" : {
+      "StorageTime" : 1478943234
+   },
+   "Source" : [
+      {
+         "IP4" : [
+            "23.249.164.204"
+         ]
+      }
+   ],
+   "ID" : "0fff2b9c-ff0c-49de-b2c6-04924601cd41"
+}

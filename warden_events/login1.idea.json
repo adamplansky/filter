@@ -1,0 +1,51 @@
+{
+   "WinStartTime" : "2016-11-10 19:10:01Z",
+   "ConnCount" : 19,
+   "Target" : [
+      {
+         "IP4" : [
+            "195.113.165.128/25"
+         ],
+         "Port" : [
+            22
+         ],
+         "Anonymised" : true,
+         "Proto" : [
+            "tcp",
+            "ssh"
+         ]
+      }
+   ],
+   "Node" : [
+      {
+         "Name" : "cz.uhk.apate.cowrie",
+         "AggrWin" : "00:05:00",
+         "Type" : [
+            "Connection",
+            "Honeypot",
+            "Recon"
+         ],
+         "SW" : [
+            "Kippo"
+         ]
+      }
+   ],
+   "WinEndTime" : "2016-11-10 19:15:01Z",
+   "ID" : "c526904d-2dfb-4710-89f1-f0acfd56a128",
+   "DetectTime" : "2016-11-10 19:58:00Z",
+   "Source" : [
+      {
+         "IP4" : [
+            "117.21.224.123"
+         ]
+      }
+   ],
+   "Note" : "SSH login attempt",
+   "_CESNET" : {
+      "StorageTime" : 1478945058
+   },
+   "Category" : [
+      "Attempt.Login"
+   ],
+   "Format" : "IDEA0"
+}

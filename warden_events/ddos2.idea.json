@@ -1,0 +1,40 @@
+{
+   "_CESNET" : {
+      "StorageTime" : 1478946132
+   },
+   "FlowCount" : 21320,
+   "CreateTime" : "2016-11-10 19:25:02Z",
+   "Format" : "IDEA0",
+   "Category" : [
+      "Availability.DoS"
+   ],
+   "EventTime" : "2016-11-10 19:20:00Z",
+   "Node" : [
+      {
+         "Type" : [
+            "Flow",
+            "Statistical"
+         ],
+         "Name" : "cz.cesnet.nemea.hoststats",
+         "SW" : [
+            "Nemea",
+            "HostStatsNemea"
+         ]
+      }
+   ],
+   "CeaseTime" : "2016-11-10 19:25:00Z",
+   "Target" : [
+      {
+         "IP4" : [
+            "195.113.241.34"
+         ],
+         "Proto" : [
+            "udp",
+            "dns"
+         ]
+      }
+   ],
+   "Description" : "195.113.241.34 received abnormally high number of large DNS replies - probably a victim of DNS amplification DoS attack",
+   "DetectTime" : "2016-11-10 19:25:02Z",
+   "ID" : "1d1e2da1-ae30-4f3d-b1d6-9b01b142977e"
+}

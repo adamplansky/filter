@@ -1,0 +1,40 @@
+{
+   "ID" : "34a799b4-f42c-41c0-b4de-da36e0463cba",
+   "Source" : [
+      {
+         "IP4" : [
+            "1.53.182.181"
+         ],
+         "Proto" : [
+            "tcp"
+         ]
+      }
+   ],
+   "_CESNET" : {
+      "StorageTime" : 1478946121
+   },
+   "CeaseTime" : "2016-11-10 19:26:40Z",
+   "ConnCount" : 787,
+   "Node" : [
+      {
+         "SW" : [
+            "Nemea",
+            "HostStatsNemea"
+         ],
+         "Type" : [
+            "Flow",
+            "Statistical"
+         ],
+         "Name" : "cz.cesnet.nemea.hoststats"
+      }
+   ],
+   "Format" : "IDEA0",
+   "EventTime" : "2016-11-10 19:21:40Z",
+   "FlowCount" : 787,
+   "DetectTime" : "2016-11-10 19:26:43Z",
+   "CreateTime" : "2016-11-10 19:26:43Z",
+   "Description" : "Horizontal port scan",
+   "Category" : [
+      "Recon.Scanning"
+   ]
+}

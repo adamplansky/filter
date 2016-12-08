@@ -1,0 +1,50 @@
+{
+   "Format" : "IDEA0",
+   "Node" : [
+      {
+         "Name" : "cz.cesnet.nemea.bruteforce",
+         "SW" : [
+            "Nemea",
+            "brute_force_detector"
+         ],
+         "Type" : [
+            "Flow",
+            "Statistical"
+         ]
+      }
+   ],
+   "_CESNET" : {
+      "StorageTime" : 1478946913
+   },
+   "Source" : [
+      {
+         "IP4" : [
+            "212.182.70.124"
+         ],
+         "Proto" : [
+            "tcp",
+            "telnet"
+         ]
+      }
+   ],
+   "ID" : "f1b535d0-6aa6-4df9-9971-0df170dccf17",
+   "Category" : [
+      "Attempt.Login",
+      "Test"
+   ],
+   "Description" : "Multiple unsuccessful login attempts on TELNET",
+   "Target" : [
+      {
+         "Port" : [
+            23
+         ],
+         "Proto" : [
+            "tcp",
+            "telnet"
+         ]
+      }
+   ],
+   "CreateTime" : "2016-11-10 19:35:05Z",
+   "DetectTime" : "2016-11-10 19:34:34Z",
+   "FlowCount" : 72
+}

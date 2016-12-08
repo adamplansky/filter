@@ -1,0 +1,65 @@
+{
+   "Type" : [
+      "Flow",
+      "Statistical"
+   ],
+   "PacketCount" : 799,
+   "Category" : [
+      "Availability.DDoS"
+   ],
+   "Format" : "IDEA0",
+   "ByteCount" : 926353,
+   "ID" : "9df9bb33-c2c1-4312-95f3-e5827c944584",
+   "Target" : [
+      {
+         "IP4" : [
+            "195.113.241.34"
+         ],
+         "InByteCount" : 926353,
+         "Proto" : [
+            "udp",
+            "dns"
+         ],
+         "InPacketCount" : 799,
+         "InFlowCount" : 416
+      }
+   ],
+   "DetectTime" : "2016-11-10 19:29:28Z",
+   "Description" : "DNS amplification",
+   "CeaseTime" : "2016-11-10 19:29:28Z",
+   "Source" : [
+      {
+         "InFlowCount" : 421,
+         "OutPacketCount" : 799,
+         "OutFlowCount" : 416,
+         "IP4" : [
+            "63.243.194.2"
+         ],
+         "InByteCount" : 28872,
+         "Proto" : [
+            "udp",
+            "dns"
+         ],
+         "InPacketCount" : 421,
+         "Type" : [
+            "Backscatter"
+         ],
+         "OutByteCount" : 926353
+      }
+   ],
+   "Node" : [
+      {
+         "Name" : "cz.cesnet.nemea.amplificationdetector",
+         "SW" : [
+            "Nemea",
+            "amplification_detection"
+         ]
+      }
+   ],
+   "EventTime" : "2016-11-10 19:14:24Z",
+   "CreateTime" : "2016-11-10 19:29:59Z",
+   "_CESNET" : {
+      "StorageTime" : 1478946611
+   },
+   "FlowCount" : 416
+}
