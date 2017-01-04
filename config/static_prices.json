@@ -10,6 +10,11 @@
     }
   },
   {
+    "Malware": 5,
+    "Test": 1,
+    "Other": 1
+  },
+  {
     "Malware": {
       "Dialer": 5,
       "Trojan": 3,
@@ -23,7 +28,7 @@
     "Recon": {
       "Sniffing": 5,
       "Scanning": 1,
-      "Searching": 6,
+      "Searching": 1,
       "SocialEngineering": 3
     }
   },

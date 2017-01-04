@@ -7,6 +7,7 @@ import glob
 import shutil
 import threading
 import random
+from random import randint
 import heapq
 from datetime import datetime
 from pprint import pprint
@@ -52,7 +53,7 @@ class FolderDispatcher(threading.Thread):
         self.folder_dispatcher()
 
 
-    def move_folder(self, src_path, dst_directory):
+    def move_to_folder(self, src_path, dst_directory):
         if not os.path.exists(dst_directory):
             os.makedirs(dst_directory)
 
@@ -61,26 +62,29 @@ class FolderDispatcher(threading.Thread):
         shutil.move(src_path, dst_path)
 
     def move_to_processed_folder(self, path):
-        return self.move_folder(path, self.JSONS_PROCESSED_PATH)
+        return self.move_to_folder(path, self.JSONS_PROCESSED_PATH)
 
     def move_to_error_folder(self, path):
-        return self.move_folder(path, self.JSONS_ERROR_PROCESSED_PATH)
+        return self.move_to_folder(path, self.JSONS_ERROR_PROCESSED_PATH)
 
 
     def folder_dispatcher(self):
         # todo: blocking calling is required in future instead of infinity loop
         while True:
-
+            #use relative path instad of absolute
             for filename in glob.glob(os.path.join(self.JSONS_PATH, '*.json')):
-                # print(filename)
+                #if size == 0, there is no data in file
+                #generator only created file .. no dumped data!!!
+                statinfo = os.stat(filename)
+                if statinfo.st_size == 0: continue
                 with open(filename) as data_file:
                     try:
                         data = json.load(data_file)
-                        # print(data)
                         # todo: some preprocess of data
+                        # todo: aggregate data many same errors
                         # differents system can have different JSONs structure
                         self.shared_array.append( data )
-                        self.move_to_processed_folder(filename)
+                        self.move_to_processed_folder( filename )
                     except Exception as e:
                         logging.error("for file: {} error: {}".format(filename,e))
                         self.move_to_error_folder(filename)
@@ -188,22 +192,31 @@ class Price:
         with open(cls.CFG_JSON_PATH) as data_file:
             data = json.load(data_file)
             for val in data:
+                print(val.items())
                 for k,v in val.items():
+                    if(type(v) is int):
+                        _category = "{}".format(k)
+                        _price = v
+                        cls.cfg_static_prices[_category] = int(_price)
+                        continue
+
                     for kk,vv in v.items():
                         _category = "{}.{}".format(k,kk)
                         _price = vv
                         cls.cfg_static_prices[_category] = int(_price)
+                        #print(cls.cfg_static_prices)
 
     @classmethod
     def calculate_price(cls, event):
         if(cls.init_call != False): cls.__init__()
         static_price = 0
         for category in event["Category"]:
+            print("category: {}, price: {}".format(category,cls.cfg_static_prices[category]))
             static_price += cls.cfg_static_prices[category]
         cr_time = AlertExtractor.get_crated_at(event)
         detect_time = AlertExtractor.get_detect_time(event)
-        #print("cr_time: ",cr_time)
-        #print("detect_time: ", detect_time)
+        print("cr_time: ",cr_time)
+        print("detect_time: ", detect_time)
         ips = AlertExtractor.get_ips(event)
         return (static_price, ips )
         #ips += AlertExtractor.get_ips(event)
@@ -236,7 +249,11 @@ class Filter(threading.Thread):
             else:
                 self.counter += 1
                 # print("processed files: ", self.counter)
+
+                #vemu si IDEA alert
                 threat_event = self.shared_array.pop()
+                print("threat_event: {}".format(threat_event))
+                #rozparsuju IDEA alert
                 threat = Price.calculate_price(threat_event)
                 self.heap_output.add(threat)
 

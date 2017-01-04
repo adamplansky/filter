@@ -18,6 +18,12 @@ def load_cfg():
         data = json.load(data_file)
         for val in data:
             for k,v in val.items():
+                if(type(v) is int):
+                    _category = "{}".format(k)
+                    _price = v
+                    print(_category, _price)
+                    continue
+
                 for kk,vv in v.items():
                     _category = "{}.{}".format(k,kk)
                     _price = vv
