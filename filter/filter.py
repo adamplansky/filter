@@ -82,7 +82,7 @@ class FolderDispatcher(threading.Thread):
                         data = json.load(data_file)
                         # todo: some preprocess of data
                         # todo: aggregate data many same errors
-                        # differents system can have different JSONs structure
+                        # differents system can have different JSONs structure (IDEA, IDMEF)
                         self.shared_array.append( data )
                         self.move_to_processed_folder( filename )
                     except Exception as e:
