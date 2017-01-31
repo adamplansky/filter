@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-
+#python filter.py -i "u:hoststats-alerts,u:haddrscan-alerts"
 import logging
 import json
+import pytrap
+import sys
 import os
 import glob
 import shutil
@@ -12,7 +14,6 @@ import heapq
 from datetime import datetime
 from pprint import pprint
 from math import log
-
 
 first = lambda h: 2**h - 1      # H stands for level height
 last = lambda h: first(h + 1)
@@ -43,9 +44,9 @@ class FolderDispatcher(threading.Thread):
     JSONS_PROCESSED_PATH = '../jsons/processed/'
     JSONS_ERROR_PROCESSED_PATH = '../jsons/error_processed/'
 
-    def __init__(self, folder_dispatcher, event):
+    def __init__(self, filter, event):
         threading.Thread.__init__(self)
-        self.shared_array = folder_dispatcher.shared_array
+        self.shared_array = filter.shared_array
         self.shared_thread_event = event
 
     def run(self):
@@ -66,7 +67,6 @@ class FolderDispatcher(threading.Thread):
 
     def move_to_error_folder(self, path):
         return self.move_to_folder(path, self.JSONS_ERROR_PROCESSED_PATH)
-
 
     def folder_dispatcher(self):
         # todo: blocking calling is required in future instead of infinity loop
@@ -89,6 +89,45 @@ class FolderDispatcher(threading.Thread):
                         logging.error("for file: {} error: {}".format(filename,e))
                         self.move_to_error_folder(filename)
                 self.shared_thread_event.set()
+
+class UnixSocketDispatcher(threading.Thread):
+    def __init__(self, filter, event):
+        threading.Thread.__init__(self)
+        self.shared_array = filter.shared_array
+        self.shared_thread_event = event
+
+    def run(self):
+        logging.debug('running UnixSocketDispatcher')
+        self.read_idea_alerts()
+
+    def read_idea_alerts(self):
+        trap = pytrap.TrapCtx()
+        ifc_input_len = len(sys.argv[2].split(","))
+        trap.init(sys.argv, ifc_input_len, 0)
+        inputspec = "IDEA"
+        trap.setRequiredFmt(0, pytrap.FMT_JSON, inputspec)
+
+        while True:
+            try:
+                data = trap.recv()
+            except pytrap.FormatChanged as e:
+                fmttype, inputspec = trap.getDataFmt(0)
+                data = e.data
+            if len(data) <= 1:
+                break
+
+            idea_alert = json.loads(str(data.decode("utf-8") ))
+            #print(idea_alert, idea_alert.__class__)
+            self.shared_array.append( idea_alert )
+
+           # break
+        # Free allocated TRAP IFCs
+        trap.finalize()
+
+
+
+
+
 class AlertExtractor:
 
     @classmethod
@@ -235,7 +274,8 @@ class Filter(threading.Thread):
 
     def run(self):
         logging.debug('running Filter')
-        fd = FolderDispatcher(self,self.shared_thread_event)
+        #fd = FolderDispatcher(self,self.shared_thread_event)
+        fd = UnixSocketDispatcher(self,self.shared_thread_event)
         fd.start()
         self.calculate_price()
         fd.join()
