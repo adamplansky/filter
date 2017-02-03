@@ -1,0 +1,13 @@
+".Format" == "IDEA0"
+  ".Node[]" -> "Node"
+  ".Source[]?" -> "Source"
+  ".Target[]?" -> "Target"
+  ".DetectTime" -> "DetectTime"
+  ".Category[]" -> "Category"
+
+". | keys[]" == "IDMEFMessage"
+  ".IDMEFMessage.Alert.Analyzer.Node.name.__text" -> "Node"
+  ".IDMEFMessage.Alert.Source.Node.Address.address.__text" -> "Source"
+  ".IDMEFMessage.Alert.Target.Node.Address.address.__text" -> "Target"
+  ".IDMEFMessage.Alert.CreateTime.__text" -> "DetectTime"
+  ".IDMEFMessage.Alert.Classification.Reference[].name.__text" -> "Category"

@@ -2,13 +2,17 @@
 #python filter.py -i "u:hoststats-alerts,u:haddrscan-alerts"
 import logging
 import json
-import pytrap
 import sys
 import os
+from os.path import dirname as dirn
 import glob
 import shutil
 import threading
 import random
+import time
+from jq import jq
+#https://github.com/mwilliamson/jq.py
+
 from random import randint
 import heapq
 from datetime import datetime
@@ -30,23 +34,20 @@ def hprint(heap, width=None):
         below = 2 ** (height - h - 1)
         field = (2 * below - 1) * width
         print(gap.join(prepare(e, field) for e in level(heap, h)))
-
-
-
 logging.basicConfig(
     level=logging.DEBUG,
     format='(%(threadName)-10s) %(message)s',
 )
-
 class FolderDispatcher(threading.Thread):
     # logging.basicConfig(filename="example.log",level=logging.DEBUG)
-    JSONS_PATH = '../jsons/'
-    JSONS_PROCESSED_PATH = '../jsons/processed/'
-    JSONS_ERROR_PROCESSED_PATH = '../jsons/error_processed/'
+    ROOT_PATH = os.path.realpath(dirn(dirn(os.path.abspath(__file__))))
+    JSONS_PATH = ROOT_PATH + '/jsons/'
+    JSONS_PROCESSED_PATH = ROOT_PATH + '/jsons/processed/'
+    JSONS_ERROR_PROCESSED_PATH = ROOT_PATH + '/jsons/error_processed/'
 
-    def __init__(self, filter, event):
+    def __init__(self, shared_array, event):
         threading.Thread.__init__(self)
-        self.shared_array = filter.shared_array
+        self.shared_array = shared_array
         self.shared_thread_event = event
 
     def run(self):
@@ -89,43 +90,7 @@ class FolderDispatcher(threading.Thread):
                         logging.error("for file: {} error: {}".format(filename,e))
                         self.move_to_error_folder(filename)
                 self.shared_thread_event.set()
-
-class UnixSocketDispatcher(threading.Thread):
-    def __init__(self, filter, event):
-        threading.Thread.__init__(self)
-        self.shared_array = filter.shared_array
-        self.shared_thread_event = event
-
-    def run(self):
-        logging.debug('running UnixSocketDispatcher')
-        self.read_idea_alerts()
-
-    def read_idea_alerts(self):
-        trap = pytrap.TrapCtx()
-        ifc_input_len = len(sys.argv[2].split(","))
-        trap.init(sys.argv, ifc_input_len, 0)
-        inputspec = "IDEA"
-        trap.setRequiredFmt(0, pytrap.FMT_JSON, inputspec)
-
-        while True:
-            try:
-                data = trap.recv()
-            except pytrap.FormatChanged as e:
-                fmttype, inputspec = trap.getDataFmt(0)
-                data = e.data
-            if len(data) <= 1:
-                break
-
-            idea_alert = json.loads(str(data.decode("utf-8") ))
-            #print(idea_alert, idea_alert.__class__)
-            self.shared_array.append( idea_alert )
-
-           # break
-        # Free allocated TRAP IFCs
-        trap.finalize()
-
-
-
+            time.sleep(1)
 
 
 class AlertExtractor:
@@ -141,6 +106,10 @@ class AlertExtractor:
     @classmethod
     def get_detect_time(cls, alert):
         return cls.parse_datetime(alert["DetectTime"])
+
+    @classmethod
+    def get_cease_time(cls, alert):
+        return cls.parse_datetime(alert["CeaseTime"])
 
     @classmethod
     def get_ips(cls, alert):
@@ -174,7 +143,8 @@ class AlertExtractor:
 class HeapOutput:
     #how many probes do I have?
     PROBES_CAPACITY = 5
-    JSONS_PROBES_PATH = '../jsons/probes/'
+    ROOT_PATH = os.path.realpath(dirn(dirn(os.path.abspath(__file__))))
+    JSONS_PROBES_PATH = ROOT_PATH + '/jsons/probes/'
     def __init__(self):
         self.heap = []
 
@@ -201,9 +171,9 @@ class HeapOutput:
             pop_val = heapq.heappushpop(self.heap,threat)
             if pop_val != threat:
                 self.create_json_threat_file(threat)
-        #print it
-        print('---------------------------------------------------------------')
-        if self.heap: hprint(self.heap)
+
+        #print('---------------------------------------------------------------')
+        #if self.heap: hprint(self.heap)
 
     def recalculte_price():
         #PRICE.calculate_price
@@ -214,8 +184,8 @@ class HeapOutput:
     def recalculate_all_prices():
         pass
 class Price:
-
-    CFG_JSON_PATH = '../config/static_prices.json'
+    ROOT_PATH = os.path.realpath(dirn(dirn(os.path.abspath(__file__))))
+    CFG_JSON_PATH = ROOT_PATH + '/config/static_prices.json'
 
     MAX_PRICE = 1000
     # algorithm for price calculation
@@ -264,18 +234,36 @@ class Price:
 
         #return (random.randint(1, cls.MAX_PRICE), event["ID"] )
 
-class Filter(threading.Thread):
+
+
+class Trimmer:
     def __init__(self):
+        pass
+
+    def preprocess(self, input):
+        #""" parse xml / json and take only mandatory items""
+        #TODO: implement!
+        return input
+
+
+
+
+class Filter(threading.Thread):
+    def __init__(self,argv_param):
         threading.Thread.__init__(self)
         self.shared_array = list()
         self.shared_thread_event = threading.Event()
         self.counter = 0
         self.heap_output = HeapOutput()
+        self.argv_param = argv_param
 
     def run(self):
         logging.debug('running Filter')
-        #fd = FolderDispatcher(self,self.shared_thread_event)
-        fd = UnixSocketDispatcher(self,self.shared_thread_event)
+        if self.argv_param == '-f':
+            fd = FolderDispatcher(self.shared_array,self.shared_thread_event)
+        elif self.argv_param == '-i':
+            fd = UnixSocketDispatcher(self,self.shared_thread_event)
+
         fd.start()
         self.calculate_price()
         fd.join()
@@ -297,8 +285,25 @@ class Filter(threading.Thread):
                 threat = Price.calculate_price(threat_event)
                 self.heap_output.add(threat)
 
+class FilterMain():
+    def __init__(self, argv_param):
+        filter = Filter(argv_param)
+        filter.start()
+        filter.join()
 
-filter = Filter()
-filter.start()
-filter.join()
-#logging.debug(filter.shared_array)
+def help():
+    return """
+    Options:
+          -i "u:socket1,u:socket2" - to use filter with NEMEA unixsockets. Number of sockets is variable."
+          -f - filter reads IDEA jsons from /jsons folder
+          """
+if __name__ == '__main__':
+    print(sys.argv)
+    if(len(sys.argv) == 1 or sys.argv[1] in ["-h","--help"]):
+        print(help())
+    elif(sys.argv[1] == "-f"):
+        FilterMain(sys.argv[1])
+    elif(sys.argv[1] == "-i"):
+        FilterMain(sys.argv[1])
+    else:
+        print(help)
