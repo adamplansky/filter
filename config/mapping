@@ -1,9 +1,10 @@
+# do not use jq symbol ?
 ".Format" == "IDEA0"
-  ".Node[]" -> "Node"
-  ".Source[]?" -> "Source"
-  ".Target[]?" -> "Target"
+  ".Node" -> "Node"
+  ".Source" -> "Source"
+  ".Target" -> "Target"
   ".DetectTime" -> "DetectTime"
-  ".Category[]" -> "Category"
+  ".Category" -> "Category"
 
 ". | keys[]" == "IDMEFMessage"
   ".IDMEFMessage.Alert.Analyzer.Node.name.__text" -> "Node"

@@ -8,15 +8,15 @@ from os.path import dirname as dirn
 import glob
 import shutil
 import threading
-import random
+#import random
 import time
-from jq import jq
+#from jq import jq
 #https://github.com/mwilliamson/jq.py
 
-from random import randint
+#from random import randint
 import heapq
 from datetime import datetime
-from pprint import pprint
+#from pprint import pprint
 from math import log
 
 first = lambda h: 2**h - 1      # H stands for level height
@@ -261,8 +261,8 @@ class Filter(threading.Thread):
         logging.debug('running Filter')
         if self.argv_param == '-f':
             fd = FolderDispatcher(self.shared_array,self.shared_thread_event)
-        elif self.argv_param == '-i':
-            fd = UnixSocketDispatcher(self,self.shared_thread_event)
+        #elif self.argv_param == '-i':
+            #fd = UnixSocketDispatcher(self,self.shared_thread_event)
 
         fd.start()
         self.calculate_price()
