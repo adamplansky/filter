@@ -17,7 +17,7 @@ class Mapping:
     def __init__(self):
         self.mapping_hash = self.mapping_to_hash(self.CFG_JSON_PATH)
     def remove_ws(self, str):
-        return str.strip().replace('\"', '')
+        return str.strip().replace("'", "")
 
     def get_first_key(self, my_dict):
         return next(iter(my_dict))
@@ -29,13 +29,12 @@ class Mapping:
         val = key = ''
         with open(cfg_path) as data_file:
             for line in data_file:
-                if(line[0] == '#'):
-                    next
-                elif(line == '\n'):
+                if(line == '\n'):
                     jq = ', '.join([str(x) for x in ary_from])
+                    print("jq: ", jq)
                     formats[key] = {val: {"jq": jq, "map_to": ary_to}}
                     ary_from = []; ary_to = []
-                elif(line[0] == "\""):
+                elif(line[0] == "'"):
                     format_json = line.split("==")
                     key = self.remove_ws(format_json[0])
                     val = self.remove_ws(format_json[1])
@@ -61,6 +60,7 @@ class Mapping:
                     hash_formated[hash_out["map_to"][x]] = jq_output[x]
         return hash_formated
 
-m = Mapping()
-h = m.map_alert_to_hash(json_idea)
-print(h["Source"])
+if __name__ == '__main__':
+    m = Mapping()
+    h = m.map_alert_to_hash(json_idea)
+    print(h["Node"])

@@ -8,15 +8,11 @@ from os.path import dirname as dirn
 import glob
 import shutil
 import threading
-#import random
+import ipaddress
 import time
-#from jq import jq
-#https://github.com/mwilliamson/jq.py
-
-#from random import randint
+from filter.mapping import Mapping
 import heapq
 from datetime import datetime
-#from pprint import pprint
 from math import log
 
 first = lambda h: 2**h - 1      # H stands for level height
@@ -24,6 +20,8 @@ last = lambda h: first(h + 1)
 level = lambda heap, h: heap[first(h):last(h)]
 prepare = lambda e, field: str(e).center(field)
 
+
+DEBUG = False
 
 def hprint(heap, width=None):
     if width is None:
@@ -45,6 +43,7 @@ class FolderDispatcher(threading.Thread):
     JSONS_PROCESSED_PATH = ROOT_PATH + '/jsons/processed/'
     JSONS_ERROR_PROCESSED_PATH = ROOT_PATH + '/jsons/error_processed/'
 
+
     def __init__(self, shared_array, event):
         threading.Thread.__init__(self)
         self.shared_array = shared_array
@@ -56,6 +55,11 @@ class FolderDispatcher(threading.Thread):
 
 
     def move_to_folder(self, src_path, dst_directory):
+        if(DEBUG == False):
+            #print("removing {}".format(src_path))
+            os.remove(src_path)
+            return
+
         if not os.path.exists(dst_directory):
             os.makedirs(dst_directory)
 
@@ -70,7 +74,7 @@ class FolderDispatcher(threading.Thread):
         return self.move_to_folder(path, self.JSONS_ERROR_PROCESSED_PATH)
 
     def folder_dispatcher(self):
-        # todo: blocking calling is required in future instead of infinity loop
+        m = Mapping()
         while True:
             #use relative path instad of absolute
             for filename in glob.glob(os.path.join(self.JSONS_PATH, '*.json')):
@@ -81,11 +85,13 @@ class FolderDispatcher(threading.Thread):
                 with open(filename) as data_file:
                     try:
                         data = json.load(data_file)
-                        # todo: some preprocess of data
-                        # todo: aggregate data many same errors
-                        # differents system can have different JSONs structure (IDEA, IDMEF)
-                        self.shared_array.append( data )
+                        idea_alert = m.map_alert_to_hash(data)
+                        da_alert = AlertExtractor.parse_alert(idea_alert)
                         self.move_to_processed_folder( filename )
+                        if da_alert is None:
+                            continue
+                        else:
+                            self.shared_array.append( da_alert )
                     except Exception as e:
                         logging.error("for file: {} error: {}".format(filename,e))
                         self.move_to_error_folder(filename)
@@ -100,10 +106,6 @@ class AlertExtractor:
         return datetime.strptime(datetime_string, '%Y-%m-%dT%H:%M:%SZ')
 
     @classmethod
-    def get_crated_at(cls, alert):
-        return cls.parse_datetime(alert["CreateTime"])
-
-    @classmethod
     def get_detect_time(cls, alert):
         return cls.parse_datetime(alert["DetectTime"])
 
@@ -112,33 +114,105 @@ class AlertExtractor:
         return cls.parse_datetime(alert["CeaseTime"])
 
     @classmethod
-    def get_ips(cls, alert):
-        ips = []
-        if("Source" in alert):
-            ips += cls.parse_ips(alert["Source"])
-        return ips
-
-    @classmethod
-    def parse_array(cls, ary):
+    def append_valid_ips(cls, ary):
+        #todo: what if '217.31.192.0/20'
+        #'TargetIP4': ['217.31.192.0/20']
         arr = []
         for val in ary:
-            arr.append(val)
+            try:
+                ip = ipaddress.ip_address(val)
+                if ip.is_global: arr.append(val)
+            except Exception as e:
+                logging.error("ip address error: {}".format(e))
         return arr
 
     @classmethod
     def parse_ips(cls, event):
-        ary_ips = []
-        for ev in event:
-            if("IP4" in ev):
-                ary_ips += cls.parse_array(ev["IP4"])
-            if("IP6" in ev):
-                ary_ips += cls.parse_array(ev["IP6"])
-        return ary_ips
-        #if(ip["IP6"]):
-        # muze bejt ip4 nebo ip6
-        # ip4 : [pole]
-        # viz: https://idea.cesnet.cz/en/index
+        #todo: rewrite
+        source_ips = []; target_ips = []
+        if(event["SourceIP4"]):
+            source_ips += cls.append_valid_ips(event["SourceIP4"])
+        if(event["SourceIP6"]):
+            source_ips += cls.append_valid_ips(event["SourceIP6"])
 
+        if(event["TargetIP6"]):
+            target_ips += cls.append_valid_ips(event["TargetIP6"])
+        if(event["TargetIP4"]):
+            target_ips += cls.append_valid_ips(event["TargetIP4"])
+
+        return [source_ips, target_ips]
+
+    @classmethod
+    def parse_score(cls, alert):
+        return max(map(Price.get_statis_price,alert["Category"]))
+
+    @classmethod
+    def parse_time(cls, alert):
+        return cls.parse_datetime(alert["DetectTime"])
+
+    @classmethod
+    def parse_node(cls, alert):
+        return [x["Name"] for x in alert["Node"]]
+
+    @classmethod
+    def dissassemble_alert(cls, alert):
+        return {"ips": cls.parse_ips(alert),
+                "time": cls.parse_time(alert),
+                "node": cls.parse_node(alert),
+                "score": cls.parse_score(alert)}
+
+    @classmethod
+    def parse_alert(cls, alert):
+        if "Test" in alert["Category"]: return None
+        return cls.dissassemble_alert(alert)
+
+class AlertDatabase:
+    def __init__(self):
+        self.database = {}
+
+    def get_ip_prefix(self, ips):
+        print("get_ip_prefix", ips)
+        if(len(ips) == 0 ): return None,[]
+        if(len(ips[0]) > 0): return "S", ips[0]
+        if(len(ips[1]) > 0): return "T", ips[1]
+        return None,[]
+
+
+    def get_max_score(self,ip):
+        #todo: check if it works
+        #probably some test is needed
+        return max([x[1] for x in self.database[ip]])
+
+    def print_database(self):
+        print("-----DATABASE-----")
+        sum_len = 0
+        for key, value in self.database.items() :
+            sum_len += len(value)
+            #print (key, len(value))
+        database_len = len(self.database)
+        print(database_len, " / ", sum_len)
+        print("-----DATABASE-----")
+
+    def database(self):
+        return self.database
+
+    def add(self,da_alert):
+        if da_alert is None: return
+        prefix, ips = self.get_ip_prefix(da_alert["ips"])
+        print("add: ",prefix, ips)
+        ips_to_return = []
+        for ip_ary in ips:
+            ip = prefix + ip_ary
+            if not ip in self.database: self.database[ip] = []
+            ips_to_return.append(ip)
+            self.database[ip].append([
+                                      da_alert["time"],
+                                      da_alert["score"],
+                                      da_alert["node"]
+                                     ])
+
+        self.print_database()
+        return ips_to_return
 
 class HeapOutput:
     #how many probes do I have?
@@ -160,8 +234,6 @@ class HeapOutput:
             f.write(json_out)
 
     def add(self, threat):
-        #ips += AlertExtractor.get_ips(event)
-        #print("report IPS: ", ips)
         print("threat:", threat)
 
         if self.PROBES_CAPACITY > len(self.heap):
@@ -196,6 +268,7 @@ class Price:
         cls.init_call = False
         cls.load_cfg()
 
+
     @classmethod
     def load_cfg(cls):
         with open(cls.CFG_JSON_PATH) as data_file:
@@ -216,37 +289,40 @@ class Price:
                         #print(cls.cfg_static_prices)
 
     @classmethod
+    def get_statis_price(cls, category):
+        if(cls.init_call != False): cls.__init__()
+        try:
+            return cls.cfg_static_prices[category]
+        except Exception:
+            #todo: log this in config / send email with json alert
+            return cls.cfg_static_prices["NotInConfig"]
+
+    @classmethod
+    def calculate_price_new(cls, ip_address):
+        database_row = cls.alert_database.add(ip_address)
+
+        return database_row
+
+
+    @classmethod
     def calculate_price(cls, event):
         if(cls.init_call != False): cls.__init__()
         static_price = 0
         for category in event["Category"]:
-            print("category: {}, price: {}".format(category,cls.cfg_static_prices[category]))
+            print("category: {}, price: {}".format(category,cls.get_statis_price(category)))
             static_price += cls.cfg_static_prices[category]
-        cr_time = AlertExtractor.get_crated_at(event)
-        detect_time = AlertExtractor.get_detect_time(event)
-        print("cr_time: ",cr_time)
-        print("detect_time: ", detect_time)
-        ips = AlertExtractor.get_ips(event)
-        return (static_price, ips )
-        #ips += AlertExtractor.get_ips(event)
-        #print("report IPS: ", ips)
-        # print("CENA: ", static_price)
 
-        #return (random.randint(1, cls.MAX_PRICE), event["ID"] )
-
-
-
-class Trimmer:
-    def __init__(self):
-        pass
-
-    def preprocess(self, input):
-        #""" parse xml / json and take only mandatory items""
-        #TODO: implement!
-        return input
-
-
-
+        #da_alert = AlertExtractor.parse_alert(event)
+        #print("calculate_price: [da_alert]", da_alert)
+        #if da_alert is None: return (0, [] )
+        #cls.alert_database.add(da_alert)
+        #print("XXXXXXXXXXXXXXXXX")
+        #print("XXXXXXXXXXXXXXXXX")
+        #print(da_alert)
+        #print(cls.alert_database.database[])
+        #print("XXXXXXXXXXXXXXXXX")
+        #print("XXXXXXXXXXXXXXXXX")
+        #return (static_price, da_alert["ips"] )
 
 class Filter(threading.Thread):
     def __init__(self,argv_param):
@@ -256,6 +332,7 @@ class Filter(threading.Thread):
         self.counter = 0
         self.heap_output = HeapOutput()
         self.argv_param = argv_param
+        self.alert_database = AlertDatabase()
 
     def run(self):
         logging.debug('running Filter')
@@ -268,6 +345,8 @@ class Filter(threading.Thread):
         self.calculate_price()
         fd.join()
 
+
+
     def calculate_price(self):
         while True:
             if len(self.shared_array) == 0:
@@ -276,14 +355,18 @@ class Filter(threading.Thread):
 
             else:
                 self.counter += 1
-                # print("processed files: ", self.counter)
+                idea_alert = self.shared_array.pop()
+                #idea alert obsahuje vice pole ip address
+                #pridam to do databaze a vratim jaky adresy to jsou
+                ips = self.alert_database.add(idea_alert)
 
-                #vemu si IDEA alert
-                threat_event = self.shared_array.pop()
-                print("threat_event: {}".format(threat_event))
-                #rozparsuju IDEA alert
-                threat = Price.calculate_price(threat_event)
-                self.heap_output.add(threat)
+                for ip in ips:
+                    score = self.alert_database.get_max_score(ip)
+                    print("get score for ip {} {} ".format(ip,score))
+                    print("alert: ", self.alert_database.database[ip])
+                print("-------")
+
+
 
 class FilterMain():
     def __init__(self, argv_param):
