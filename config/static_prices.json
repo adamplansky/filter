@@ -1,86 +1,86 @@
 [
-	{
-		"Abusive": {
-			"Spam": 1,
-			"Harassment": 2,
-			"Child": 1,
-			"Sexual": 1,
-			"Violence": 5
-		}
-	},
-	{
-		"Malware": {
-			"Virus": 1,
-			"Worm": 2,
-			"Trojan": 3,
-			"Spyware": 4,
-			"Dialer": 5,
-			"Rootkit": 6
-		}
-	},
-	{
-		"Recon": {
-			"Scanning": 1,
-			"Sniffing": 5,
-			"SocialEngineering": 3,
-			"Searching": 6
-		}
-	},
-	{
-		"Attempt": {
-			"Exploit": 1,
-			"Login": 5,
-			"NewSignature": 6
-		}
-	},
-	{
-		"Intrusion": {
-			"AdminCompromise": 5,
-			"UserCompromise": 6,
-			"AppCompromise": 6,
-			"Botnet": 8
-		}
-	},
-	{
-		"Availability": {
-			"DoS": 5,
-			"DDoS": 5,
-			"Sabotage": 5,
-			"Outage": 5
-		}
-	},
-	{
-		"Information": {
-			"UnauthorizedAccess": 5,
-			"UnauthorizedModification": 2
-		}
-	},
-	{
-		"Fraud": {
-			"UnauthorizedUsage": 5,
-			"Copyright": 6,
-			"Masquerade": 7,
-			"Phishing": 8,
-			"Scam": 9
-		}
-	},
-	{
-		"Vulnerable": {
-			"Open": 1,
-			"Config": 2
-		}
-	},
-	{
-		"Anomaly": {
-			"Traffic": 5,
-			"Connection": 7,
-			"Protocol": 8,
-			"System": 9,
-			"Application": 5,
-			"Behaviour": 10
-		}
-	},
-	{
-		"NotInConfig": 10
-	}
+  {
+    "Abusive": {
+      "Harassment": 10,
+      "Violence": 10,
+      "Sexual": 10,
+      "Spam": 10,
+      "Child": 10
+    }
+  },
+  {
+    "Malware": {
+      "Dialer": 10,
+      "Trojan": 10,
+      "Rootkit": 10,
+      "Virus": 10,
+      "Worm": 10,
+      "Spyware": 10
+    }
+  },
+  {
+    "Recon": {
+      "Sniffing": 10,
+      "Scanning": 1,
+      "Searching": 10,
+      "SocialEngineering": 10
+    }
+  },
+  {
+    "Attempt": {
+      "NewSignature": 10,
+      "Exploit": 10,
+      "Login": 10
+    }
+  },
+  {
+    "Intrusion": {
+      "AdminCompromise": 10,
+      "UserCompromise": 10,
+      "AppCompromise": 10,
+      "Botnet": 10
+    }
+  },
+  {
+    "Availability": {
+      "DoS": 10,
+      "DDoS": 10,
+      "Outage": 10,
+      "Sabotage": 10
+    }
+  },
+  {
+    "Information": {
+      "UnauthorizedAccess": 10,
+      "UnauthorizedModification": 10
+    }
+  },
+  {
+    "Fraud": {
+      "Masquerade": 10,
+      "Phishing": 10,
+      "UnauthorizedUsage": 10,
+      "Scam": 10,
+      "Copyright": 10
+    }
+  },
+  {
+    "Vulnerable": {
+      "Open": 10,
+      "Config": 10
+    }
+  },
+  {
+    "Anomaly": {
+      "Behaviour": 10,
+      "Application": 10,
+      "Connection": 10,
+      "Protocol": 10,
+      "Traffic": 10,
+      "System": 10
+    }
+  },
+  {
+    "NotInConfig": 10
+  }
 ]

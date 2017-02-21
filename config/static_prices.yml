@@ -1,54 +1,54 @@
 # src for static_prices.json
 # https://yaml-online-parser.appspot.com/?yaml=-+Abusive%3A%0A++++Spam%3A+1%0A++++Harassment%3A+2%0A++++Child%3A+1%0A++++Sexual%3A+1%0A++++Violence%3A+5%0A-+Malware%3A%0A++++Virus%3A+1%0A++++Worm%3A+2%0A++++Trojan%3A+3%0A++++Spyware%3A+4%0A++++Dialer%3A+5%0A++++Rootkit%3A+6%0A-+Recon%3A%0A++++Scanning%3A+1%0A++++Sniffing%3A+5%0A++++SocialEngineering%3A+3%0A++++Searching%3A+6%0A-+Attempt%3A%0A++++Exploit%3A+1%0A++++Login%3A+5%0A++++NewSignature%3A+6%0A-+Intrusion%3A%0A++++AdminCompromise%3A+5%0A++++UserCompromise%3A+6%0A++++AppCompromise%3A+6%0A++++Botnet%3A+8%0A-+Availability%3A%0A++++DoS%3A+5%0A++++DDoS%3A+5%0A++++Sabotage%3A+5%0A++++Outage%3A+5%0A-+Information%3A%0A++++UnauthorizedAccess%3A+5%0A++++UnauthorizedModification%3A+2%0A-+Fraud%3A%0A++++UnauthorizedUsage%3A+5%0A++++Copyright%3A+6%0A++++Masquerade%3A+7%0A++++Phishing%3A+8%0A++++Scam%3A+9%0A-+Vulnerable%3A%0A++++Open%3A+1%0A++++Config%3A+2%0A-+Anomaly%3A%0A++++Traffic%3A+5%0A++++Connection%3A+7%0A++++Protocol%3A+8%0A++++System%3A+9%0A++++Application%3A+5%0A++++Behaviour%3A+10%0A&type=json
 - Abusive:
-    Spam: 1
-    Harassment: 2
-    Child: 1
-    Sexual: 1
-    Violence: 5
+    Spam: 10
+    Harassment: 10
+    Child: 10
+    Sexual: 10
+    Violence: 10
 - Malware:
-    Virus: 1
-    Worm: 2
-    Trojan: 3
-    Spyware: 4
-    Dialer: 5
-    Rootkit: 6
+    Virus: 10
+    Worm: 10
+    Trojan: 10
+    Spyware: 10
+    Dialer: 10
+    Rootkit: 10
 - Recon:
     Scanning: 1
-    Sniffing: 5
-    SocialEngineering: 3
-    Searching: 6
+    Sniffing: 10
+    SocialEngineering: 10
+    Searching: 10
 - Attempt:
-    Exploit: 1
-    Login: 5
-    NewSignature: 6
+    Exploit: 10
+    Login: 10
+    NewSignature: 10
 - Intrusion:
-    AdminCompromise: 5
-    UserCompromise: 6
-    AppCompromise: 6
-    Botnet: 8
+    AdminCompromise: 10
+    UserCompromise: 10
+    AppCompromise: 10
+    Botnet: 10
 - Availability:
-    DoS: 5
-    DDoS: 5
-    Sabotage: 5
-    Outage: 5
+    DoS: 10
+    DDoS: 10
+    Sabotage: 10
+    Outage: 10
 - Information:
-    UnauthorizedAccess: 5
-    UnauthorizedModification: 2
+    UnauthorizedAccess: 10
+    UnauthorizedModification: 10
 - Fraud:
-    UnauthorizedUsage: 5
-    Copyright: 6
-    Masquerade: 7
-    Phishing: 8
-    Scam: 9
+    UnauthorizedUsage: 10
+    Copyright: 10
+    Masquerade: 10
+    Phishing: 10
+    Scam: 10
 - Vulnerable:
-    Open: 1
-    Config: 2
+    Open: 10
+    Config: 10
 - Anomaly:
-    Traffic: 5
-    Connection: 7
-    Protocol: 8
-    System: 9
-    Application: 5
+    Traffic: 10
+    Connection: 10
+    Protocol: 10
+    System: 10
+    Application: 10
     Behaviour: 10
 - NotInConfig: 10
