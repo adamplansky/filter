@@ -36,8 +36,6 @@ while True:
     except pytrap.FormatChanged as e:
         fmttype, inputspec = trap.getDataFmt(0)
         data = e.data
-    except Exception as e:
-        print(e)
     if len(data) <= 1:
         break
 
