@@ -102,6 +102,7 @@ class FolderDispatcher(threading.Thread):
                 with open(filename) as data_file:
                     try:
                         data = json.load(data_file)
+                        print("data ", data)
                         idea_alert = m.map_alert_to_hash(data)
                         da_alert = AlertExtractor.parse_alert(idea_alert)
                         self.move_to_processed_folder( filename )
@@ -116,6 +117,7 @@ class FolderDispatcher(threading.Thread):
             time.sleep(1)
 class RabbitMqDispatcher(threading.Thread):
     def __init__(self, shared_array, event):
+        self.m = Mapping()
         threading.Thread.__init__(self)
         self.shared_array = shared_array
         self.shared_thread_event = event
@@ -144,10 +146,12 @@ class RabbitMqDispatcher(threading.Thread):
         queue_name = result.method.queue
         channel.queue_bind(exchange='broadcast_idea', queue=queue_name)
         print(' [*] Waiting for ideas. To exit press CTRL+C')
-        m = Mapping()
+
         def callback(ch, method, properties, body):
-            data = json.loads(body.decode("utf-8"))
-            idea_alert = m.map_alert_to_hash(data)
+            data = json.loads(json.loads(body.decode("utf-8")))
+            print("data: ",data,data.__class__)
+            idea_alert = self.m.map_alert_to_hash(data)
+            print("idea_alert: ",idea_alert)
             da_alert = AlertExtractor.parse_alert(idea_alert)
             if da_alert is not None:
                 self.shared_array.append( da_alert )
@@ -452,7 +456,7 @@ class Filter(threading.Thread):
                 #idea alert obsahuje vice pole ip address
                 #pridam to do databaze a vratim jaky adresy to jsou
                 ips = self.alert_database.add(idea_alert)
-
+                print(ips)
                 for ip in ips:
                     #todo: cnt_hour pouze pokud add += 1 jinak nic
                     score = self.alert_database.get_last_score(ip)
