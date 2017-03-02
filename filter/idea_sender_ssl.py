@@ -1,6 +1,7 @@
 # #!/usr/bin/env python
-#python idea_sender.py -i 'u:hoststats-alerts,u:amplification-alerts,u:bruteforce-alerts,u:haddrscan-alerts,u:vportscan-alerts'
+# python idea_sender.py -i 'u:hoststats-alerts,u:amplification-alerts'
 import pika
+import ssl
 import json
 import os
 import pytrap
@@ -12,8 +13,15 @@ trap.init(sys.argv, ifc_input_len, 0)
 inputspec = "IDEA"
 trap.setRequiredFmt(0, pytrap.FMT_JSON, inputspec)
 
-credentials = pika.PlainCredentials(os.environ['RABBITMQ_NEMEA_COLLECTOR_USERNAME'], os.environ['RABBITMQ_NEMEA_COLLETOR_PASSWORD'])
-parameters = pika.ConnectionParameters(host=os.environ['RABBITMQ_NEMEA_COLLECTOR_HOSTNAME'], port=5672, virtual_host='/', credentials=credentials)
+ssl_options = {
+    "ca_certs":"/home/nemea/cacert.pem",
+    "certfile": "/home/nemea/client/cert.pem",
+    "keyfile": "/home/nemea/client/key.pem",
+    "cert_reqs": ssl.CERT_REQUIRED,
+    "ssl_version":ssl.PROTOCOL_TLSv1_2
+}
+credentials = pika.PlainCredentials(os.environ['RABBITMQ_USERNAME'], os.environ['RABBITMQ_PASSWORD'])
+parameters = pika.ConnectionParameters(host='192.168.2.120', port=5671, virtual_host='/', heartbeat_interval = 0, credentials=credentials, ssl = True, ssl_options = ssl_options)
 connection = pika.BlockingConnection(parameters)
 channel = connection.channel()
 channel.exchange_declare(exchange='broadcast_idea', exchange_type='fanout')
@@ -22,7 +30,6 @@ while True:
     try:
         data = trap.recv()
         message = json.dumps(data.decode('utf-8').encode('utf-8'))
-        print(message)
         channel.basic_publish(exchange='broadcast_idea',routing_key='',body=message)
         print(" [x] Sent 'IDEA Alert'")
 

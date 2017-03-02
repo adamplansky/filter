@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 #python filter.py -i "u:hoststats-alerts,u:haddrscan-alerts"
 
 import logging
@@ -18,8 +18,9 @@ import threading
 import ipaddress
 import time
 from filter.mapping import Mapping
+from filter.time_machine_capture import Capture, Sock
 import heapq
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta #, timezone
 from math import log
 
 first = lambda h: 2**h - 1      # H stands for level height
@@ -65,16 +66,19 @@ class FolderDispatcher(threading.Thread):
         threading.Thread.__init__(self)
         self.shared_array = shared_array
         self.shared_thread_event = event
+        self.daemon = True
 
     def run(self):
         logging.debug('running FolderDispatcher')
         self.folder_dispatcher()
 
 
+
     def move_to_folder(self, src_path, dst_directory):
         if(DEBUG == False):
             #print("removing {}".format(src_path))
-            os.remove(src_path)
+            if os.path.exists(src_path):
+                os.remove(src_path)
             return
 
         if not os.path.exists(dst_directory):
@@ -102,7 +106,6 @@ class FolderDispatcher(threading.Thread):
                 with open(filename) as data_file:
                     try:
                         data = json.load(data_file)
-                        print("data ", data)
                         idea_alert = m.map_alert_to_hash(data)
                         da_alert = AlertExtractor.parse_alert(idea_alert)
                         self.move_to_processed_folder( filename )
@@ -112,7 +115,8 @@ class FolderDispatcher(threading.Thread):
                             self.shared_array.append( da_alert )
                     except Exception as e:
                         logging.error("for file: {} error: {}".format(filename,e))
-                        self.move_to_error_folder(filename)
+                        print("for file: {} error: {}".format(filename,e))
+                        #self.move_to_error_folder(filename)
                 self.shared_thread_event.set()
             time.sleep(1)
 class RabbitMqDispatcher(threading.Thread):
@@ -266,7 +270,7 @@ class AlertDatabase:
         return self.database[ip]["cnt"]
 
     def recalculate_cnt_hour(self, ip):
-        date_min = datetime.now(timezone.utc) - timedelta(hours=1)
+        date_min = datetime.now(pytz.timezone("UTC")) - timedelta(hours=1)
         cnt_hour = 0
         for idx, da_alert in enumerate(self.database[ip]["alerts"]):
             if(date_min < da_alert[0]):
@@ -367,7 +371,6 @@ class Price:
         with open(cls.CFG_JSON_PATH) as data_file:
             data = json.load(data_file)
             for val in data:
-                print(val.items())
                 for k,v in val.items():
                     if(type(v) is int):
                         _category = "{}".format(k)
@@ -405,21 +408,10 @@ class Price:
             print("category: {}, price: {}".format(category,cls.get_statis_price(category)))
             static_price += cls.cfg_static_prices[category]
 
-        #da_alert = AlertExtractor.parse_alert(event)
-        #print("calculate_price: [da_alert]", da_alert)
-        #if da_alert is None: return (0, [] )
-        #cls.alert_database.add(da_alert)
-        #print("XXXXXXXXXXXXXXXXX")
-        #print("XXXXXXXXXXXXXXXXX")
-        #print(da_alert)
-        #print(cls.alert_database.database[])
-        #print("XXXXXXXXXXXXXXXXX")
-        #print("XXXXXXXXXXXXXXXXX")
-        #return (static_price, da_alert["ips"] )
 
-class Filter(threading.Thread):
+class Filter():
     def __init__(self,argv_param):
-        threading.Thread.__init__(self)
+        #threading.Thread.__init__(self)
         self.shared_array = list()
         self.shared_thread_event = threading.Event()
         self.counter = 0
@@ -429,15 +421,17 @@ class Filter(threading.Thread):
         self.global_filter_cnt = 0
         self.global_capture_filter_cnt = 0
 
-    def run(self):
+
+    def run_filter(self):
         logging.debug('running Filter')
+
         if self.argv_param == '-f':
             fd = FolderDispatcher(self.shared_array,self.shared_thread_event)
         elif self.argv_param == '-RMQ':
             fd = RabbitMqDispatcher(self.shared_array,self.shared_thread_event)
         #elif self.argv_param == '-i':
             #fd = UnixSocketDispatcher(self,self.shared_thread_event)
-
+        fd.setDaemon(True)  #
         fd.start()
         self.calculate_price()
         fd.join()
@@ -456,7 +450,6 @@ class Filter(threading.Thread):
                 #idea alert obsahuje vice pole ip address
                 #pridam to do databaze a vratim jaky adresy to jsou
                 ips = self.alert_database.add(idea_alert)
-                print(ips)
                 for ip in ips:
                     #todo: cnt_hour pouze pokud add += 1 jinak nic
                     score = self.alert_database.get_last_score(ip)
@@ -465,7 +458,7 @@ class Filter(threading.Thread):
                     #print("get score for ip {} score: {} cnt_hour: {}".format(ip,score, cnt_hour))
                     #print("alert: ", self.alert_database.database[ip])
                     self.global_filter_cnt += 1
-                    if(score > 1 or (score == 1 and (cnt == 5 or cnt % 100 == 0))):
+                    if(score > 1 or (score == 1 and (cnt == 2 or cnt % 100 == 0))):
                         #posli pozadavek o zachyt
                         CaptureRequest.send(ip)
                         self.global_capture_filter_cnt += 1
@@ -474,22 +467,39 @@ class Filter(threading.Thread):
                         #print("Capture requirments: " +bcolors.WARNING +  "Not satisfied" + bcolors.ENDC)
 
 
-
-
-                #print("-------")
-
-
 class CaptureRequest():
+    init_call = True
+    @classmethod
+    def __init__(cls):
+        cls.init_call = False
+        cls.addr_info = [['localhost', 37564]]
+
     @classmethod
     def send(cls, dir_and_ip):
-        direction, ip = AlertExtractor.extract_ip_and_direction(dir_and_ip)
-        print(bcolors.OKGREEN + "Capture Request => ip: {}, direction: {}. packets: {}, seconds: {}".format(ip, direction, 10000, 300) + bcolors.ENDC)
+        if(cls.init_call != False): cls.__init__()
+        if not cls.connection_is_established():
+            cls.connect_to_time_manager()
 
-class FilterMain():
-    def __init__(self, argv_param):
-        filter = Filter(argv_param)
-        filter.start()
-        filter.join()
+        if cls.connection_is_established():
+            ip = "8.8.8.1"
+            direction = "src_ip"
+            direction, ip = AlertExtractor.extract_ip_and_direction(dir_and_ip)
+            print(bcolors.OKGREEN + "Capture Request => ip: {}, direction: {}. packets: {}, seconds: {}".format(ip, direction, 10000, 300) + bcolors.ENDC)
+            Capture.do_add("{} {} {} {} {}".format(direction, ip, "XYZA", 10000, 500))
+            Capture.do_list("")
+            #Capture.do_remove("{} {}".format(direction, ip))
+            #Capture.do_list("")
+
+
+
+    @classmethod
+    def connection_is_established(cls):
+        return Sock.connect() > 0
+
+    @classmethod
+    def connect_to_time_manager(cls):
+        Sock.add_probes(cls.addr_info)
+
 
 def help():
     return """
@@ -499,14 +509,21 @@ def help():
           -RMQ - rabbitmq - hardcoded parameters
           """
 if __name__ == '__main__':
-    print(sys.argv)
-    if(len(sys.argv) == 1 or sys.argv[1] in ["-h","--help"]):
-        print(help())
-    elif(sys.argv[1] == "-RMQ"):
-        FilterMain(sys.argv[1])
-    elif(sys.argv[1] == "-f"):
-        FilterMain(sys.argv[1])
-    elif(sys.argv[1] == "-i"):
-        FilterMain(sys.argv[1])
-    else:
-        print(help)
+    try:
+        print(sys.argv)
+        if(len(sys.argv) == 1 or sys.argv[1] in ["-h","--help"]):
+            print(help())
+        elif(sys.argv[1] == "-RMQ"):
+            Filter(sys.argv[1]).run_filter()
+        elif(sys.argv[1] == "-f"):
+            Filter(sys.argv[1]).run_filter()
+        elif(sys.argv[1] == "-i"):
+            Filter(sys.argv[1]).run_filter()
+        else:
+            print(help)
+    except KeyboardInterrupt:
+        print("interrupting")
+    # for t in threads:
+    #     t.join()
+    #
+    # print "Exiting Main Thread"
