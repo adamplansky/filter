@@ -1,0 +1,2 @@
+nohup ./filter.py -RMQ >filter.out 2>&1 &
+nohup python idea_sender.py -i 'u:hoststats-alerts,u:amplification-alerts,u:bruteforce-alerts,u:haddrscan-alerts,u:vportscan-alerts' &
