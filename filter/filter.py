@@ -408,7 +408,7 @@ class AlertDatabase:
         ips = self.get_ip_prefix_1(da_alert["ips"])
         source_ips = ips[0]; target_ips = ips[1]
         ips_to_return = source_ips + target_ips
-        print(ips_to_return)
+        print("source_ips: {}, target_ips: {}, category: {}".format(source_ips, target_ips, da_alert["category"]))
         for i in range(0,2):
             next_ary = ips[(i + 1) % 2]
             for ip in ips[i]:
