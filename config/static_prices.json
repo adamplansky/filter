@@ -1,86 +1,181 @@
 [
   {
+    "Default": {
+      "Packets": 100,
+      "Direction": "S",
+      "Score": 10,
+      "Timeout": 20
+    }
+  },
+  {
     "Abusive": {
-      "Harassment": 10,
-      "Violence": 10,
-      "Sexual": 10,
-      "Spam": 10,
-      "Child": 10
+      "Harassment": {
+        "Score": 10
+      },
+      "Violence": {
+        "Score": 10
+      },
+      "Sexual": {
+        "Score": 10
+      },
+      "Spam": {
+        "Score": 10
+      },
+      "Child": {
+        "Score": 10
+      }
     }
   },
   {
     "Malware": {
-      "Dialer": 10,
-      "Trojan": 10,
-      "Rootkit": 10,
-      "Virus": 10,
-      "Worm": 10,
-      "Spyware": 10
+      "Dialer": {
+        "Score": 10
+      },
+      "Trojan": {
+        "Score": 10
+      },
+      "Rootkit": {
+        "Score": 10
+      },
+      "Virus": {
+        "Score": 10
+      },
+      "Worm": {
+        "Score": 10
+      },
+      "Spyware": {
+        "Score": 10
+      }
     }
   },
   {
     "Recon": {
-      "Sniffing": 10,
-      "Scanning": 1,
-      "Searching": 10,
-      "SocialEngineering": 10
+      "Sniffing": {
+        "Score": 10
+      },
+      "Scanning": {
+        "Packets": 10,
+        "Direction": "BT",
+        "Score": 1,
+        "Timeout": 100
+      },
+      "Searching": {
+        "Score": 10
+      },
+      "SocialEngineering": {
+        "Score": 10
+      }
     }
   },
   {
     "Attempt": {
-      "NewSignature": 10,
-      "Exploit": 10,
-      "Login": 10
+      "NewSignature": {
+        "Score": 10
+      },
+      "Exploit": {
+        "Score": 10
+      },
+      "Login": {
+        "Score": 10
+      }
     }
   },
   {
     "Intrusion": {
-      "AdminCompromise": 10,
-      "UserCompromise": 10,
-      "AppCompromise": 10,
-      "Botnet": 10
+      "AdminCompromise": {
+        "Score": 10
+      },
+      "UserCompromise": {
+        "Score": 10
+      },
+      "AppCompromise": {
+        "Score": 10
+      },
+      "Botnet": {
+        "Score": 10
+      }
     }
   },
   {
     "Availability": {
-      "DoS": 10,
-      "DDoS": 10,
-      "Outage": 10,
-      "Sabotage": 10
+      "DoS": {
+        "Score": 10
+      },
+      "DDoS": {
+        "Score": 10
+      },
+      "Outage": {
+        "Score": 10
+      },
+      "Sabotage": {
+        "Score": 10
+      }
     }
   },
   {
     "Information": {
-      "UnauthorizedAccess": 10,
-      "UnauthorizedModification": 10
+      "UnauthorizedAccess": {
+        "Score": 10
+      },
+      "UnauthorizedModification": {
+        "Score": 10
+      }
     }
   },
   {
     "Fraud": {
-      "Masquerade": 10,
-      "Phishing": 10,
-      "UnauthorizedUsage": 10,
-      "Scam": 10,
-      "Copyright": 10
+      "Masquerade": {
+        "Score": 10
+      },
+      "Phishing": {
+        "Score": 10
+      },
+      "UnauthorizedUsage": {
+        "Score": 10
+      },
+      "Scam": {
+        "Score": 10
+      },
+      "Copyright": {
+        "Score": 10
+      }
     }
   },
   {
     "Vulnerable": {
-      "Open": 10,
-      "Config": 10
+      "Open": {
+        "Score": 10
+      },
+      "Config": {
+        "Score": 10
+      }
     }
   },
   {
     "Anomaly": {
-      "Behaviour": 10,
-      "Application": 10,
-      "Connection": 10,
-      "Protocol": 10,
-      "Traffic": 10,
-      "System": 10
+      "Behaviour": {
+        "Score": 10
+      },
+      "Application": {
+        "Score": 10
+      },
+      "Connection": {
+        "Score": 10
+      },
+      "Protocol": {
+        "Score": 10
+      },
+      "Traffic": {
+        "Score": 10
+      },
+      "System": {
+        "Score": 10
+      }
     }
   },
   {
-    "NotInConfig": 10
+    "NotInConfig": {
+      "Score": 10
+    }
   }
 ]

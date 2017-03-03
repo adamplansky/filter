@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 #python filter.py -i "u:hoststats-alerts,u:haddrscan-alerts"
-
 import logging
 import json
 import sys
@@ -10,6 +9,7 @@ import ssl
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from collections import defaultdict
 from os.path import dirname as dirn
 import glob
 import pytz
@@ -17,8 +17,8 @@ import shutil
 import threading
 import ipaddress
 import time
-from filter.mapping import Mapping
-from filter.time_machine_capture import Capture, Sock
+from mapping import Mapping
+from time_machine_capture import Capture, Sock
 import heapq
 from datetime import datetime, timedelta #, timezone
 from math import log
@@ -212,9 +212,13 @@ class AlertExtractor:
 
         return [source_ips, target_ips]
 
+    # @classmethod
+    # def parse_score(cls, alert):
+    #     return max(map(Price.get_static_price,alert["Category"]))
+
     @classmethod
-    def parse_score(cls, alert):
-        return max(map(Price.get_statis_price,alert["Category"]))
+    def parse_category(cls, alert):
+        return alert["Category"]
 
     @classmethod
     def parse_time(cls, alert):
@@ -229,7 +233,7 @@ class AlertExtractor:
         return {"ips": cls.parse_ips(alert),
                 "time": cls.parse_time(alert),
                 "node": cls.parse_node(alert),
-                "score": cls.parse_score(alert)}
+                "category": cls.parse_category(alert)}
 
     @classmethod
     def parse_alert(cls, alert):
@@ -237,48 +241,156 @@ class AlertExtractor:
         return cls.dissassemble_alert(alert)
 
 class AlertDatabase:
+
+
+    ROOT_PATH = os.path.realpath(dirn(dirn(os.path.abspath(__file__))))
+    CFG_JSON_PATH = ROOT_PATH + '/config/static_prices.json'
+
+
     def __init__(self):
         self.database = {}
+        self.database_cfg = defaultdict(dict)
+        self.load_cfg()
+
+    def get_most_significant_category_from_array(self, category_ary):
+        max_score = 0
+        max_category = ""
+        for category in category_ary:
+            score = self.get_static_price(category)
+            if max_score < score:
+                max_score = score
+                max_category = category
+        return max_category
+
+    def get_static_price(self, category):
+        try:
+            #print(category, self.database_cfg[category])
+            return self.database_cfg[category]["Score"]
+        except Exception:
+            #todo: log this in config / send email with json alert
+            return self.database_cfg["Default"]["Score"]
+
+    def load_cfg_recursion(self,dict_in, dict_out,key_acc=""):
+        for key, val in dict_in.items():
+            if not isinstance(val,dict):
+                dict_out[key_acc][key] = val
+            else:
+                k = (key_acc + "." + key if len(key_acc) > 0 else key)
+                self.load_cfg_recursion(val, dict_out,k)
+    @classmethod
+    def get_time_machine_direction(cls,direction):
+         return {
+             'S':"src_ip",
+             'T':"dst_ip",
+             'BS':"bidir_ip",
+             'BT':"bidir_ip",
+             'BB':"bidir_ip",
+             }.get(direction)
+
+    def get_capture_params(self, ip):
+        sources = []; targets = [];
+        last_alert = self.get_last_alert_event(ip)
+        if last_alert is None: return
+        if ip[0] == "S":
+            sources.append(ip)
+            targets.append(last_alert[3])
+        else:
+            targets.append(ip)
+            sources.append(last_alert[3])
+        default_parameters = self.database_cfg["Default"]
+        categories = self.get_last_category_array(ip)
+        category = self.get_most_significant_category_from_array(categories)
+        if len(category) > 0 :
+            default_parameters.update(self.database_cfg[category])
+        capture_parameters = {
+            "direction": AlertDatabase.get_time_machine_direction(default_parameters["Direction"]),
+            "packets":  default_parameters["Packets"],
+            "timeout":  default_parameters["Timeout"],
+            "category":  category
+            }
+        capture_requests = []
+        if default_parameters["Direction"] in ["S","BS","BB"]:
+            for source_ip in sources:
+                capture_parameters["ip_addr"] = source_ip
+                capture_requests.append(capture_parameters)
+        if default_parameters["Direction"] in ["T","BT","BB"]:
+            for target_ip in targets:
+                capture_parameters["ip_addr"] = target_ip
+                capture_requests.append(capture_parameters)
+
+        print(capture_requests)
+        return capture_requests
+
+
+    def load_cfg(self):
+        with open(self.CFG_JSON_PATH) as data_file:
+            data = json.load(data_file)
+            for cfg_line_dict in data:
+                self.load_cfg_recursion(cfg_line_dict, self.database_cfg)
+        #print(self.database_cfg)
 
     def get_ip_prefix(self, ips):
-        #print("get_ip_prefix", ips)
+        print("get ip prefix", ips)
         if(len(ips) == 0 ): return None,[]
         if(len(ips[0]) > 0): return "S", ips[0]
         if(len(ips[1]) > 0): return "T", ips[1]
         return None,[]
+
+    def get_ip_prefix_1(self, ips):
+        ip_ary = []
+        if(len(ips[0]) > 0):
+            ip_ary.append(map((lambda x: "S"+x), ips[0]))
+        else:
+            ip_ary.append([])
+        if(len(ips[1]) > 0):
+            ip_ary.append(map((lambda x: "T"+x), ips[1]))
+        else:
+            ip_ary.append([])
+        return ip_ary
 
 
     def get_max_score(self,ip):
         #todo: check if it works
         #probably some test is needed
         return max([x[1] for x in self.database[ip]])
+
+    def get_last_category_array(self, ip):
+        category = []
+        if(len(self.database[ip]["alerts"]) > 0):
+            category = self.database[ip]["alerts"][-1][1]
+        return category
+
+
     def get_last_score(self,ip):
         if(len(self.database[ip]["alerts"]) > 0):
-            return self.database[ip]["alerts"][-1][1]
+            return self.get_static_price(self.get_last_category_array(ip))
         return -1
+
+    def get_last_alert_event(self, ip):
+        if(len(self.database[ip]["alerts"]) > 0):
+            return self.database[ip]["alerts"][-1]
+        return None
+
+
 
     def print_database(self):
         print("-----DATABASE-----")
         for key, value in self.database.items() :
-            print ("{} -> {}/{}".format(key, value["cnt_hour"],value["cnt"]))
+            print ("{} -> {}/{}".format(key,value["cnt"]))
         print("-----DATABASE-----")
 
-    def get_cnt_hour(self, ip):
-        return self.database[ip]["cnt_hour"]
+    # def get_cnt_hour(self, ip):
+    #     return self.database[ip]["cnt_hour"]
 
     def get_cnt(self, ip):
         return self.database[ip]["cnt"]
 
     def recalculate_cnt_hour(self, ip):
         date_min = datetime.now(pytz.timezone("UTC")) - timedelta(hours=1)
-        cnt_hour = 0
         for idx, da_alert in enumerate(self.database[ip]["alerts"]):
-            if(date_min < da_alert[0]):
-                cnt_hour+=1
-                #print(da_alert[0])
-            else:
+            if(date_min > da_alert[0]):
                 del self.database[ip]["alerts"][idx]
-        self.database[ip]["cnt_hour"] = cnt_hour
+        #self.database[ip]["cnt_hour"] = cnt_hour
         #print(date_min < self.database[ip]["alerts"][0])
         #self.database[ip]["cnt_hour"] = cnt_hour
         # print("##############################")
@@ -292,23 +404,25 @@ class AlertDatabase:
     def add(self,da_alert):
         #print("da_alert: ", da_alert)
         if da_alert is None: return
-        prefix, ips = self.get_ip_prefix(da_alert["ips"])
-        #print("add: ",prefix, ips)
-        ips_to_return = []
-        for ip_ary in ips:
-            ip = prefix + ip_ary
-            if not ip in self.database: self.database[ip] = {"cnt": 0, "alerts": [], "cnt_hour": 0}
-            ips_to_return.append(ip)
-            self.database[ip]["alerts"].append([
-                                      da_alert["time"],
-                                      da_alert["score"],
-                                      da_alert["node"]
-                                     ])
-            self.database[ip]["cnt"] += 1
-            self.recalculate_cnt_hour(ip)
+        ips = self.get_ip_prefix_1(da_alert["ips"])
+        source_ips = ips[0]; target_ips = ips[1]
+        ips_to_return = source_ips + target_ips
+        print(ips_to_return)
+        for i in range(0,2):
+            next_ary = ips[(i + 1) % 2]
+            for ip in ips[i]:
+                minor_ips_ary = next_ary
+                if not ip in self.database: self.database[ip] = {"cnt": 0, "alerts": []}
+                self.database[ip]["alerts"].append([
+                                          da_alert["time"],
+                                          da_alert["category"],
+                                          da_alert["node"],
+                                          minor_ips_ary
+                                         ])
+                self.database[ip]["cnt"] += 1
+                self.recalculate_cnt_hour(ip)
 
-
-        #sself.print_database()
+        #self.print_database()
         return ips_to_return
 
 class HeapOutput:
@@ -352,61 +466,60 @@ class HeapOutput:
 
     def recalculate_all_prices():
         pass
-class Price:
-    ROOT_PATH = os.path.realpath(dirn(dirn(os.path.abspath(__file__))))
-    CFG_JSON_PATH = ROOT_PATH + '/config/static_prices.json'
+# class Price:
+#     ROOT_PATH = os.path.realpath(dirn(dirn(os.path.abspath(__file__))))
+#     CFG_JSON_PATH = ROOT_PATH + '/config/static_prices.json'
+#
+#     MAX_PRICE = 1000
+#     # algorithm for price calculation
+#     init_call = True
+#     cfg_static_prices =  defaultdict(dict)
+#     @classmethod
+#     def __init__(cls):
+#         cls.init_call = False
+#         cls.load_cfg()
+#
+#     @classmethod
+#     def load_cfg_recursion(cls,dict_in, dict_out,key_acc=""):
+#         for key, val in dict_in.items():
+#             if not isinstance(val,dict):
+#                 dict_out[key_acc][key] = val
+#             else:
+#                 k = (key_acc + "." + key if len(key_acc) > 0 else key)
+#                 cls.load_cfg_recursion(val, dict_out,k)
+#
+#     @classmethod
+#     def load_cfg(cls):
+#         with open(cls.CFG_JSON_PATH) as data_file:
+#             data = json.load(data_file)
+#             for cfg_line_dict in data:
+#                 cls.load_cfg_recursion(cfg_line_dict, cls.cfg_static_prices)
+#         print(cls.cfg_static_prices)
+#     @classmethod
+#     def get_static_price(cls, category):
+#         if(cls.init_call != False): cls.__init__()
+#         try:
+#             print(category, cls.cfg_static_prices[category])
+#             return cls.cfg_static_prices[category]["Score"]
+#         except Exception:
+#             #todo: log this in config / send email with json alert
+#             return cls.cfg_static_prices["Default"]["Score"]
 
-    MAX_PRICE = 1000
-    # algorithm for price calculation
-    init_call = True
-    cfg_static_prices = {}
-    @classmethod
-    def __init__(cls):
-        cls.init_call = False
-        cls.load_cfg()
-
-
-    @classmethod
-    def load_cfg(cls):
-        with open(cls.CFG_JSON_PATH) as data_file:
-            data = json.load(data_file)
-            for val in data:
-                for k,v in val.items():
-                    if(type(v) is int):
-                        _category = "{}".format(k)
-                        _price = v
-                        cls.cfg_static_prices[_category] = int(_price)
-                        continue
-
-                    for kk,vv in v.items():
-                        _category = "{}.{}".format(k,kk)
-                        _price = vv
-                        cls.cfg_static_prices[_category] = int(_price)
-                        #print(cls.cfg_static_prices)
-
-    @classmethod
-    def get_statis_price(cls, category):
-        if(cls.init_call != False): cls.__init__()
-        try:
-            return cls.cfg_static_prices[category]
-        except Exception:
-            #todo: log this in config / send email with json alert
-            return cls.cfg_static_prices["NotInConfig"]
-
-    @classmethod
-    def calculate_price_new(cls, ip_address):
-        database_row = cls.alert_database.add(ip_address)
-
-        return database_row
+    # @classmethod
+    # def calculate_price_new(cls, ip_address):
+    #     database_row = cls.alert_database.add(ip_address)
+    #
+    #     return database_row
 
 
-    @classmethod
-    def calculate_price(cls, event):
-        if(cls.init_call != False): cls.__init__()
-        static_price = 0
-        for category in event["Category"]:
-            print("category: {}, price: {}".format(category,cls.get_statis_price(category)))
-            static_price += cls.cfg_static_prices[category]
+    # @classmethod
+    # def calculate_price(cls, event):
+    #     if(cls.init_call != False): cls.__init__()
+    #     static_price = 0
+    #     for category in event["Category"]:
+    #         print("category: {}, price: {}".format(category,cls.get_statis_price(category)))
+    #         static_price += cls.cfg_static_prices[category]
+    #         print(static_price)
 
 
 class Filter():
@@ -450,17 +563,20 @@ class Filter():
                 #idea alert obsahuje vice pole ip address
                 #pridam to do databaze a vratim jaky adresy to jsou
                 ips = self.alert_database.add(idea_alert)
+#                print("PRINT: ",idea_alert, ips)
+
                 for ip in ips:
                     #todo: cnt_hour pouze pokud add += 1 jinak nic
                     score = self.alert_database.get_last_score(ip)
-                    #cnt_hour = self.alert_database.get_cnt_hour(ip)
                     cnt = self.alert_database.get_cnt(ip)
                     #print("get score for ip {} score: {} cnt_hour: {}".format(ip,score, cnt_hour))
                     #print("alert: ", self.alert_database.database[ip])
                     self.global_filter_cnt += 1
-                    if(score > 1 or (score == 1 and (cnt == 2 or cnt % 100 == 0))):
+                    #print(bcolors.OKBLUE +  "alert_database[{}]: {}".format(ip,self.alert_database.database[ip]) + bcolors.ENDC)
+                    #print("posilam pozadavak o zachyt: ", )
+                    if(score > 1 or (score == 1 and (cnt % 100) == 3 ) ):
                         #posli pozadavek o zachyt
-                        CaptureRequest.send(ip)
+                        CaptureRequest.send(self.alert_database.get_capture_params(ip))
                         self.global_capture_filter_cnt += 1
                         print(bcolors.WARNING +  "{}/{}".format(self.global_capture_filter_cnt,self.global_filter_cnt ) + bcolors.ENDC)
                     #else:
@@ -475,18 +591,19 @@ class CaptureRequest():
         cls.addr_info = [['localhost', 37564]]
 
     @classmethod
-    def send(cls, dir_and_ip):
+    def send(cls, capture_requests):
         if(cls.init_call != False): cls.__init__()
         if not cls.connection_is_established():
             cls.connect_to_time_manager()
 
         if cls.connection_is_established():
-            ip = "8.8.8.1"
-            direction = "src_ip"
-            direction, ip = AlertExtractor.extract_ip_and_direction(dir_and_ip)
-            print(bcolors.OKGREEN + "Capture Request => ip: {}, direction: {}. packets: {}, seconds: {}".format(ip, direction, 10000, 300) + bcolors.ENDC)
-            Capture.do_add("{} {} {} {} {}".format(direction, ip, "XYZA", 10000, 500))
-            Capture.do_list("")
+            for capture_request in capture_requests:
+                print(bcolors.OKGREEN + "{} {} {} {} {}".format(capture_request["direction"], capture_request["ip_addr"], ("{}_{}".format(capture_request["category"],capture_request["ip_addr"])), capture_request["packets"], capture_request["timeout"]) + bcolors.ENDC)
+                Capture.do_add("{} {} {} {} {}".format(capture_request["direction"], capture_request["ip_addr"], ("{}_{}".format(capture_request["category"],capture_request["ip_addr"])), capture_request["packets"], capture_request["timeout"]))
+
+            #print(bcolors.OKGREEN + "Capture Request => ip: {}, direction: {}. packets: {}, seconds: {}".format(ip, direction, 10000, 300) + bcolors.ENDC)
+            #Capture.do_add("{} {} {} {} {}".format(direction, ip, "XYZA", 10000, 500))
+            #Capture.do_list("")
             #Capture.do_remove("{} {}".format(direction, ip))
             #Capture.do_list("")
 
