@@ -131,15 +131,16 @@ class RabbitMqDispatcher(threading.Thread):
         self.idea_dispatcher()
 
     def idea_dispatcher(self):
-        ssl_options = {
-            "ca_certs":"/Users/adamplansky/Desktop/message_app/testca/cacert.pem",
-            "certfile": "/Users/adamplansky/Desktop/message_app/client/cert.pem",
-            "keyfile": "/Users/adamplansky/Desktop/message_app/client/key.pem",
-            "cert_reqs": ssl.CERT_REQUIRED,
-            "ssl_version":ssl.PROTOCOL_TLSv1_2
-        }
-        credentials = pika.PlainCredentials(os.environ['RABBITMQ_USERNAME'], os.environ['RABBITMQ_PASSWORD'])
-        parameters = pika.ConnectionParameters(host='192.168.2.120', port=5671, virtual_host='/', heartbeat_interval = 0, credentials=credentials, ssl = True, ssl_options = ssl_options)
+        # ssl_options = {
+        #     "ca_certs":"/Users/adamplansky/Desktop/message_app/testca/cacert.pem",
+        #     "certfile": "/Users/adamplansky/Desktop/message_app/client/cert.pem",
+        #     "keyfile": "/Users/adamplansky/Desktop/message_app/client/key.pem",
+        #     "cert_reqs": ssl.CERT_REQUIRED,
+        #     "ssl_version":ssl.PROTOCOL_TLSv1_2
+        # }
+        credentials = pika.PlainCredentials(os.environ['RABBITMQ_NEMEA_COLLECTOR_USERNAME'], os.environ['RABBITMQ_NEMEA_COLLECTOR_PASSWORD'])
+        #parameters = pika.ConnectionParameters(host='192.168.2.120', port=5671, virtual_host='/', heartbeat_interval = 0, credentials=credentials, ssl = True, ssl_options = ssl_options)
+        parameters = pika.ConnectionParameters(host=os.environ["RABBITMQ_NEMEA_COLLECTOR_HOSTNAME"], port=5672, virtual_host='/', credentials=credentials)
         connection = pika.BlockingConnection(parameters)
         channel = connection.channel()
 
@@ -153,9 +154,9 @@ class RabbitMqDispatcher(threading.Thread):
 
         def callback(ch, method, properties, body):
             data = json.loads(json.loads(body.decode("utf-8")))
-            print("data: ",data,data.__class__)
+            #print("data: ",data,data.__class__)
             idea_alert = self.m.map_alert_to_hash(data)
-            print("idea_alert: ",idea_alert)
+            #print("idea_alert: ",idea_alert)
             da_alert = AlertExtractor.parse_alert(idea_alert)
             if da_alert is not None:
                 self.shared_array.append( da_alert )
