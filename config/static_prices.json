@@ -55,7 +55,7 @@
       },
       "Scanning": {
         "Packets": 10,
-        "Direction": "BT",
+        "Direction": "S",
         "Score": 1,
         "Timeout": 100
       },
