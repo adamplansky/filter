@@ -12,8 +12,8 @@ trap.init(sys.argv, ifc_input_len, 0)
 inputspec = "IDEA"
 trap.setRequiredFmt(0, pytrap.FMT_JSON, inputspec)
 
-credentials = pika.PlainCredentials(os.environ['RABBITMQ_NEMEA_COLLECTOR_USERNAME'], os.environ['RABBITMQ_NEMEA_COLLETOR_PASSWORD'])
-parameters = pika.ConnectionParameters(host=os.environ['RABBITMQ_NEMEA_COLLECTOR_HOSTNAME'], port=5672, virtual_host='/', credentials=credentials)
+credentials = pika.PlainCredentials(os.environ['RABBITMQ_USERNAME'], os.environ['RABBITMQ_PASSWORD'])
+parameters = pika.ConnectionParameters(host="localhost", port=5672, virtual_host='/', credentials=credentials)
 connection = pika.BlockingConnection(parameters)
 channel = connection.channel()
 channel.exchange_declare(exchange='broadcast_idea', exchange_type='fanout')

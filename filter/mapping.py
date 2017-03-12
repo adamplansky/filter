@@ -10,12 +10,14 @@ json_idea = {"Node": [{"Type": ["Relay"], "Name": "cz.cesnet.ftas"}, {"SW": ["FT
 class Mapping:
 
     FILE_NAME = 'mapping'
-
+    ROOT_PATH = os.path.realpath(dirn(os.path.abspath(__file__)))
     CONFIG_PATH = os.path.realpath(dirn(dirn(os.path.abspath(__file__)))) + '/config/'
     CFG_JSON_PATH = CONFIG_PATH + FILE_NAME
 
-    def __init__(self):
-        self.mapping_hash = self.mapping_to_hash(self.CFG_JSON_PATH)
+    def __init__(self, mapping_cfg):
+        cfg_path = os.path.normpath(self.ROOT_PATH + "/" + mapping_cfg)
+        print("mapping cfg path: ", cfg_path)
+        self.mapping_hash = self.mapping_to_hash(cfg_path)
     def remove_ws(self, str):
         return str.strip().replace("'", "")
 

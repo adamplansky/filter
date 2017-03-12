@@ -6,6 +6,8 @@ import sys
 import os
 import pika
 import ssl
+import argparse
+import cmd
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -56,21 +58,28 @@ class bcolors:
 
 class FolderDispatcher(threading.Thread):
     # logging.basicConfig(filename="example.log",level=logging.DEBUG)
-    ROOT_PATH = os.path.realpath(dirn(dirn(os.path.abspath(__file__))))
+    ROOT_PATH = os.path.realpath(dirn(os.path.abspath(__file__)))
     JSONS_PATH = ROOT_PATH + '/jsons/'
     JSONS_PROCESSED_PATH = ROOT_PATH + '/jsons/processed/'
     JSONS_ERROR_PROCESSED_PATH = ROOT_PATH + '/jsons/error_processed/'
 
 
-    def __init__(self, shared_array, event):
+    def __init__(self, shared_array, event, json_path, mapping_cfg):
         threading.Thread.__init__(self)
         self.shared_array = shared_array
         self.shared_thread_event = event
         self.daemon = True
+        self.JSONS_PATH = os.path.normpath(self.ROOT_PATH + "/" + json_path)
+        self.m = Mapping(mapping_cfg)
+        self.mapping_cfg = mapping_cfg
+        print("FolderDispatcher JSON PATH: " + self.JSONS_PATH)
 
     def run(self):
         logging.debug('running FolderDispatcher')
         self.folder_dispatcher()
+
+    def reload_cfg(self):
+        self.m = Mapping(self.mapping_cfg)
 
 
 
@@ -95,8 +104,8 @@ class FolderDispatcher(threading.Thread):
         return self.move_to_folder(path, self.JSONS_ERROR_PROCESSED_PATH)
 
     def folder_dispatcher(self):
-        m = Mapping()
         while True:
+
             #use relative path instad of absolute
             for filename in glob.glob(os.path.join(self.JSONS_PATH, '*.json')):
                 #if size == 0, there is no data in file
@@ -106,7 +115,7 @@ class FolderDispatcher(threading.Thread):
                 with open(filename) as data_file:
                     try:
                         data = json.load(data_file)
-                        idea_alert = m.map_alert_to_hash(data)
+                        idea_alert = self.m.map_alert_to_hash(data)
                         da_alert = AlertExtractor.parse_alert(idea_alert)
                         self.move_to_processed_folder( filename )
                         if da_alert is None:
@@ -120,14 +129,19 @@ class FolderDispatcher(threading.Thread):
                 self.shared_thread_event.set()
             time.sleep(1)
 class RabbitMqDispatcher(threading.Thread):
-    def __init__(self, shared_array, event):
-        self.m = Mapping()
+    def __init__(self, shared_array, event, dispatcher_options_array, mapping_cfg):
+        self.m = Mapping(mapping_cfg)
+        self.mapping_cfg = mapping_cfg
         threading.Thread.__init__(self)
         self.shared_array = shared_array
         self.shared_thread_event = event
+        self.dispatcher_options_array = dispatcher_options_array
+        print("self.dispatcher_options_array: ", self.dispatcher_options_array)
+
+    def reload_cfg(self):
+        self.m = Mapping(self.mapping_cfg)
 
     def run(self):
-        logging.debug('running RabbitMqDispatcher')
         self.idea_dispatcher()
 
     def idea_dispatcher(self):
@@ -138,9 +152,10 @@ class RabbitMqDispatcher(threading.Thread):
         #     "cert_reqs": ssl.CERT_REQUIRED,
         #     "ssl_version":ssl.PROTOCOL_TLSv1_2
         # }
-        credentials = pika.PlainCredentials(os.environ['RABBITMQ_NEMEA_COLLECTOR_USERNAME'], os.environ['RABBITMQ_NEMEA_COLLECTOR_PASSWORD'])
+        xhost, xport, xusername, xpassword = self.dispatcher_options_array
+        credentials = pika.PlainCredentials(xusername, xpassword)
         #parameters = pika.ConnectionParameters(host='192.168.2.120', port=5671, virtual_host='/', heartbeat_interval = 0, credentials=credentials, ssl = True, ssl_options = ssl_options)
-        parameters = pika.ConnectionParameters(host=os.environ["RABBITMQ_NEMEA_COLLECTOR_HOSTNAME"], port=5672, virtual_host='/', credentials=credentials)
+        parameters = pika.ConnectionParameters(host=xhost, port=xport, virtual_host='/', credentials=credentials)
         connection = pika.BlockingConnection(parameters)
         channel = connection.channel()
 
@@ -242,16 +257,19 @@ class AlertExtractor:
         return cls.dissassemble_alert(alert)
 
 class AlertDatabase:
+    ROOT_PATH = os.path.realpath(dirn(os.path.abspath(__file__)))
 
-
-    ROOT_PATH = os.path.realpath(dirn(dirn(os.path.abspath(__file__))))
-    CFG_JSON_PATH = ROOT_PATH + '/config/static_prices.json'
-
-
-    def __init__(self):
+    def __init__(self, cfg_path):
         self.database = {}
         self.database_cfg = defaultdict(dict)
+        self.CFG_JSON_PATH = os.path.normpath(self.ROOT_PATH + "/" + cfg_path)
         self.load_cfg()
+
+    def reload_cfg(self):
+        self.database_cfg = defaultdict(dict)
+        self.load_cfg()
+
+
 
     def get_most_significant_category_from_array(self, category_ary):
         max_score = 0
@@ -391,13 +409,6 @@ class AlertDatabase:
         for idx, da_alert in enumerate(self.database[ip]["alerts"]):
             if(date_min > da_alert[0]):
                 del self.database[ip]["alerts"][idx]
-        #self.database[ip]["cnt_hour"] = cnt_hour
-        #print(date_min < self.database[ip]["alerts"][0])
-        #self.database[ip]["cnt_hour"] = cnt_hour
-        # print("##############################")
-        # print(self.database[ip])
-        # print("##############################")
-
 
     def database(self):
         return self.database
@@ -523,32 +534,50 @@ class HeapOutput:
     #         print(static_price)
 
 
-class Filter():
-    def __init__(self,argv_param):
+class Filter(cmd.Cmd):
+    def __init__(self,argv_param, dispatcher_options, alert_database_cfg, mapping_cfg, time_machine_params):
+        cmd.Cmd.__init__(self)
         #threading.Thread.__init__(self)
         self.shared_array = list()
         self.shared_thread_event = threading.Event()
         self.counter = 0
         self.heap_output = HeapOutput()
         self.argv_param = argv_param
-        self.alert_database = AlertDatabase()
+        self.alert_database = AlertDatabase(alert_database_cfg)
         self.global_filter_cnt = 0
         self.global_capture_filter_cnt = 0
+        self.dispatcher_options = dispatcher_options
+        self.mapping_cfg = mapping_cfg
+        self.time_machine_params = time_machine_params
+        CaptureRequest(self.time_machine_params)
+        self.fd = None
 
+
+    def do_reload_cfg(self, args):
+        print("reloading all config files")
+        if self.fd:
+            self.fd.reload_cfg()
+        if self.alert_database:
+            self.alert_database.reload_cfg()
+
+    def do_exit(self,args):
+        print("exiting!!!")
+        return True
+
+    def do_start(self,args):
+        self.run_filter()
 
     def run_filter(self):
         logging.debug('running Filter')
-
+        print("self.argv_param:", self.argv_param)
         if self.argv_param == '-f':
-            fd = FolderDispatcher(self.shared_array,self.shared_thread_event)
+            self.fd = FolderDispatcher(self.shared_array,self.shared_thread_event, self.dispatcher_options[0], self.mapping_cfg)
         elif self.argv_param == '-RMQ':
-            fd = RabbitMqDispatcher(self.shared_array,self.shared_thread_event)
-        #elif self.argv_param == '-i':
-            #fd = UnixSocketDispatcher(self,self.shared_thread_event)
-        fd.setDaemon(True)  #
-        fd.start()
+            self.fd = RabbitMqDispatcher(self.shared_array,self.shared_thread_event, self.dispatcher_options, self.mapping_cfg)
+        self.fd.setDaemon(True)  #
+        self.fd.start()
         self.calculate_price()
-        fd.join()
+        #self.fd.join()
 
 
 
@@ -575,7 +604,7 @@ class Filter():
                     self.global_filter_cnt += 1
                     #print(bcolors.OKBLUE +  "alert_database[{}]: {}".format(ip,self.alert_database.database[ip]) + bcolors.ENDC)
                     #print("posilam pozadavak o zachyt: ", )
-                    if(score > 1 or (score == 1 and (cnt % 100) == 3 ) ):
+                    if(score >= 1 or (score == 1 and (cnt % 100) == 3 ) ):
                         #posli pozadavek o zachyt
                         CaptureRequest.send(self.alert_database.get_capture_params(ip))
                         self.global_capture_filter_cnt += 1
@@ -587,21 +616,26 @@ class Filter():
 class CaptureRequest():
     init_call = True
     @classmethod
-    def __init__(cls):
+    def __init__(cls, params):
+
         cls.init_call = False
-        cls.addr_info = [['localhost', 37564]]
+        cls.addr_info = params
+        print("CaptureRequest INIT: ", cls.addr_info)
 
     @classmethod
     def send(cls, capture_requests):
+        for capture_request in capture_requests:
+            print(capture_request["ip_addr"][1:])
         if(cls.init_call != False): cls.__init__()
         if not cls.connection_is_established():
             cls.connect_to_time_manager()
 
         if cls.connection_is_established():
             for capture_request in capture_requests:
-                print(bcolors.OKGREEN + "{} {} {} {} {}".format(capture_request["direction"], capture_request["ip_addr"][1:], ("{}_{}".format(capture_request["category"],capture_request["ip_addr"])), capture_request["packets"], capture_request["timeout"]) + bcolors.ENDC)
+                print(bcolors.HEADER + "Time machine manager: ON" +bcolors.ENDC + "\n" + bcolors.OKGREEN + "{} {} {} {} {}".format(capture_request["direction"], capture_request["ip_addr"][1:], ("{}_{}".format(capture_request["category"],capture_request["ip_addr"])), capture_request["packets"], capture_request["timeout"]) + bcolors.ENDC)
                 Capture.do_add("{} {} {} {} {}".format(capture_request["direction"], capture_request["ip_addr"][1:], ("{}_{}".format(capture_request["category"],capture_request["ip_addr"])), capture_request["packets"], capture_request["timeout"]))
-
+        else:
+            print(bcolors.HEADER + "Time machine manager: OFF" +bcolors.ENDC + "\n" +bcolors.OKGREEN + "{} {} {} {} {}".format(capture_request["direction"], capture_request["ip_addr"][1:], ("{}_{}".format(capture_request["category"],capture_request["ip_addr"])), capture_request["packets"], capture_request["timeout"]) + bcolors.ENDC)
             #print(bcolors.OKGREEN + "Capture Request => ip: {}, direction: {}. packets: {}, seconds: {}".format(ip, direction, 10000, 300) + bcolors.ENDC)
             #Capture.do_add("{} {} {} {} {}".format(direction, ip, "XYZA", 10000, 500))
             #Capture.do_list("")
@@ -618,30 +652,52 @@ class CaptureRequest():
     def connect_to_time_manager(cls):
         Sock.add_probes(cls.addr_info)
 
-
-def help():
-    return """
-    Options:
-          -i "u:socket1,u:socket2" - to use filter with NEMEA unixsockets. Number of sockets is variable."
-          -f - filter reads IDEA jsons from /jsons folder
-          -RMQ - rabbitmq - hardcoded parameters
-          """
 if __name__ == '__main__':
-    try:
-        print(sys.argv)
-        if(len(sys.argv) == 1 or sys.argv[1] in ["-h","--help"]):
-            print(help())
-        elif(sys.argv[1] == "-RMQ"):
-            Filter(sys.argv[1]).run_filter()
-        elif(sys.argv[1] == "-f"):
-            Filter(sys.argv[1]).run_filter()
-        elif(sys.argv[1] == "-i"):
-            Filter(sys.argv[1]).run_filter()
-        else:
-            print(help)
-    except KeyboardInterrupt:
-        print("interrupting")
-    # for t in threads:
-    #     t.join()
-    #
-    # print "Exiting Main Thread"
+
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    #parser.add_argument("num", help="The Fibonacci number you wish to calculate.", type=int)
+    parser.add_argument("-v", "--verbose", help="Verbose output.", default="false")
+    parser.add_argument("-f", "--folder", help="All input json files are taken from ../jsons/ folder if is not specified with -fp parameter", action="store_true")
+    parser.add_argument("-fp", "--folder_path", help="Folder path from where are json files taken", action="store", default="../jsons/")
+    parser.add_argument("-RMQ", "--RabbitMQ", help="All input json files sare taken from rabbitmq server", action="store_true")
+    parser.add_argument("-RMQhostname", "--RabbitMQ_hostname", help="RabbitMQ hostname", action="store", default="localhost")
+    parser.add_argument("-RMQport", "--RabbitMQ_port", help="RabbitMQ port", action="store", default=5672, type=int)
+    parser.add_argument("-RMQusername", "--RabbitMQ_username", help="RabbitMQ username", action="store", default='guest')
+    parser.add_argument("-RMQpassword", "--RabbitMQ_password", help="RabbitMQ password", action="store", default='guest')
+    parser.add_argument("-tmm", "--time_machine_manager", help="All output is sent to time machine manager.", action="store_true")
+    parser.add_argument("-tmm_hostname", "--time_machine_manager_hostname", help="Time machine manager hostname.", action="store", default="localhost")
+    parser.add_argument("-tmm_port", "--time_machine_manager_port", help="Time machine manager port.", action="store", default=37564, type=int)
+    parser.add_argument("-no_tmm", "--no_time_machine_manager", help="Time machine manager is disable, all filter output will be printed only to STDOUT", action="store_true")
+    parser.add_argument("-cfg_mapping", help="Path to mapping config", action="store", default="../config/mapping")
+    parser.add_argument("-cfg", help="Path to config", action="store", default="../config/static_prices.json")
+
+    if len(sys.argv)==1:
+        parser.print_help()
+        sys.exit(1)
+
+    args = parser.parse_args()
+    dispatcher_options = []
+    filter = None
+    xarg = ""
+    if args.RabbitMQ:
+        dispatcher_options.append(args.RabbitMQ_hostname)
+        dispatcher_options.append(args.RabbitMQ_port)
+        dispatcher_options.append(args.RabbitMQ_username)
+        dispatcher_options.append(args.RabbitMQ_password)
+        xarg = args.RabbitMQ
+        xarg = "-RMQ"
+    elif args.folder:
+        dispatcher_options.append(args.folder_path)
+        xarg = "-f"
+
+
+    if args.time_machine_manager:
+        tmm_params = [args.time_machine_manager_hostname, args.time_machine_manager_port]
+    else:
+        tmm_params = []
+    filter = Filter(xarg, dispatcher_options, args.cfg, args.cfg_mapping, tmm_params)
+    filter.prompt = '> '
+    filter.cmdloop('Starting prompt...')
+    # filter = Filter(xarg, dispatcher_options, args.cfg, args.cfg_mapping, tmm_params).run_filter()
+    exit()
