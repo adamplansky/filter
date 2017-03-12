@@ -81,8 +81,6 @@ class FolderDispatcher(threading.Thread):
     def reload_cfg(self):
         self.m = Mapping(self.mapping_cfg)
 
-
-
     def move_to_folder(self, src_path, dst_directory):
         if(DEBUG == False):
             #print("removing {}".format(src_path))
@@ -134,6 +132,7 @@ class RabbitMqDispatcher(threading.Thread):
         self.mapping_cfg = mapping_cfg
         threading.Thread.__init__(self)
         self.shared_array = shared_array
+        self.daemon = True
         self.shared_thread_event = event
         self.dispatcher_options_array = dispatcher_options_array
         print("self.dispatcher_options_array: ", self.dispatcher_options_array)
@@ -534,10 +533,11 @@ class HeapOutput:
     #         print(static_price)
 
 
-class Filter(cmd.Cmd):
+
+
+class Filter(threading.Thread):
     def __init__(self,argv_param, dispatcher_options, alert_database_cfg, mapping_cfg, time_machine_params):
-        cmd.Cmd.__init__(self)
-        #threading.Thread.__init__(self)
+        threading.Thread.__init__(self)
         self.shared_array = list()
         self.shared_thread_event = threading.Event()
         self.counter = 0
@@ -551,20 +551,15 @@ class Filter(cmd.Cmd):
         self.time_machine_params = time_machine_params
         CaptureRequest(self.time_machine_params)
         self.fd = None
+        self.daemon = True
 
-
-    def do_reload_cfg(self, args):
-        print("reloading all config files")
+    def reload_cfg(self):
         if self.fd:
             self.fd.reload_cfg()
         if self.alert_database:
             self.alert_database.reload_cfg()
 
-    def do_exit(self,args):
-        print("exiting!!!")
-        return True
-
-    def do_start(self,args):
+    def run(self):
         self.run_filter()
 
     def run_filter(self):
@@ -574,7 +569,6 @@ class Filter(cmd.Cmd):
             self.fd = FolderDispatcher(self.shared_array,self.shared_thread_event, self.dispatcher_options[0], self.mapping_cfg)
         elif self.argv_param == '-RMQ':
             self.fd = RabbitMqDispatcher(self.shared_array,self.shared_thread_event, self.dispatcher_options, self.mapping_cfg)
-        self.fd.setDaemon(True)  #
         self.fd.start()
         self.calculate_price()
         #self.fd.join()
@@ -652,6 +646,30 @@ class CaptureRequest():
     def connect_to_time_manager(cls):
         Sock.add_probes(cls.addr_info)
 
+
+class Shell(cmd.Cmd):
+    def __init__(self, filter):
+        cmd.Cmd.__init__(self)
+        self.filter = filter
+        self.prompt = 'filter> '
+        self.active_t = False
+
+    def do_exit(self,args):
+        print("exiting!!!")
+        return True
+
+    def do_start(self,args):
+        #self.filter.setDaemon(True)
+        if self.active_t == False:
+            self.filter.start()
+            self.active_t = True
+
+    def do_stop(self,args):
+        pass
+
+    def do_reload_config(self,args):
+        self.filter.reload_cfg()
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -697,7 +715,6 @@ if __name__ == '__main__':
     else:
         tmm_params = []
     filter = Filter(xarg, dispatcher_options, args.cfg, args.cfg_mapping, tmm_params)
-    filter.prompt = '> '
-    filter.cmdloop('Starting prompt...')
+    Shell(filter).cmdloop()
     # filter = Filter(xarg, dispatcher_options, args.cfg, args.cfg_mapping, tmm_params).run_filter()
     exit()
