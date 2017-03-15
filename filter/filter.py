@@ -597,8 +597,8 @@ class Filter(threading.Thread):
                     #print("alert: ", self.alert_database.database[ip])
                     self.global_filter_cnt += 1
                     #print(bcolors.OKBLUE +  "alert_database[{}]: {}".format(ip,self.alert_database.database[ip]) + bcolors.ENDC)
-                    #print("posilam pozadavak o zachyt: ", )
-                    if(score >= 1 or (score == 1 and (cnt % 100) == 3 ) ):
+
+                    if(score > 1 or (score == 1 and (cnt % 100) == 3 ) ):
                         #posli pozadavek o zachyt
                         CaptureRequest.send(self.alert_database.get_capture_params(ip))
                         self.global_capture_filter_cnt += 1
@@ -655,17 +655,13 @@ class Shell(cmd.Cmd):
         self.active_t = False
 
     def do_exit(self,args):
-        print("exiting!!!")
+        print("exiting filter")
         return True
 
     def do_start(self,args):
-        #self.filter.setDaemon(True)
         if self.active_t == False:
             self.filter.start()
             self.active_t = True
-
-    def do_stop(self,args):
-        pass
 
     def do_reload_config(self,args):
         self.filter.reload_cfg()
