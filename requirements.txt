@@ -1,0 +1,8 @@
+Faker==0.7.3
+ipaddr==2.1.11
+jq==0.1.6
+matplotlib==1.5.1
+numpy==1.11.1
+pika==0.10.0
+pytz==2016.6.1
+brewer2mpl==1.4.1
