@@ -5,7 +5,7 @@ import json
 import sys
 import os
 import pika
-import ssl
+#import ssl
 import argparse
 import cmd
 
@@ -21,7 +21,6 @@ import ipaddress
 import time
 from mapping import Mapping
 from time_machine_capture import Capture, Sock
-import heapq
 from datetime import datetime, timedelta #, timezone
 from math import log
 
@@ -180,9 +179,9 @@ class RabbitMqDispatcher(threading.Thread):
 
 
 class AlertExtractor:
-    @classmethod
-    def extract_ip_and_direction(cls, dir_and_ip):
-        return dir_and_ip[:1], dir_and_ip[1:]
+    # @classmethod
+    # def extract_ip_and_direction(cls, dir_and_ip):
+    #     return dir_and_ip[:1], dir_and_ip[1:]
 
     @classmethod
     def parse_datetime(cls, datetime_string):
@@ -190,13 +189,9 @@ class AlertExtractor:
         local_tz = pytz.timezone ("UTC")
         return local_tz.localize(datetime.strptime(datetime_string, '%Y-%m-%dT%H:%M:%SZ'))
 
-    @classmethod
-    def get_detect_time(cls, alert):
-        return cls.parse_datetime(alert["DetectTime"])
-
-    @classmethod
-    def get_cease_time(cls, alert):
-        return cls.parse_datetime(alert["CeaseTime"])
+    # @classmethod
+    # def get_detect_time(cls, alert):
+    #     return cls.parse_datetime(alert["DetectTime"])
 
     @classmethod
     def append_valid_ips(cls, ary):
@@ -268,8 +263,6 @@ class AlertDatabase:
         self.database_cfg = defaultdict(dict)
         self.load_cfg()
 
-
-
     def get_most_significant_category_from_array(self, category_ary):
         max_score = 0
         max_category = ""
@@ -280,13 +273,23 @@ class AlertDatabase:
                 max_category = category
         return max_category
 
-    def get_static_price(self, category):
+
+    #def get_static_price(self, category):
+    def get_static_price_from_cfg(self, category):
         try:
-            #print(category, self.database_cfg[category])
             return self.database_cfg[category]["Score"]
         except Exception:
             #todo: log this in config / send email with json alert
             return self.database_cfg["Default"]["Score"]
+
+    def get_static_price(self, category):
+        category_score = 0
+        if type(category) is list:
+            for cat in category:
+                category_score = max(self.get_static_price_from_cfg(cat),category_score)
+        else:
+            category_score = max(self.get_static_price_from_cfg(category),category_score)
+        return category_score
 
     def load_cfg_recursion(self,dict_in, dict_out,key_acc=""):
         for key, val in dict_in.items():
@@ -297,6 +300,8 @@ class AlertDatabase:
                 self.load_cfg_recursion(val, dict_out,k)
     @classmethod
     def get_time_machine_direction(cls,direction):
+        #todo predelat to na enum??
+        #wtf proc tam je BS a BT a BB
          return {
              'S':"src_ip",
              'T':"dst_ip",
@@ -345,16 +350,8 @@ class AlertDatabase:
             data = json.load(data_file)
             for cfg_line_dict in data:
                 self.load_cfg_recursion(cfg_line_dict, self.database_cfg)
-        #print(self.database_cfg)
 
     def get_ip_prefix(self, ips):
-        print("get ip prefix", ips)
-        if(len(ips) == 0 ): return None,[]
-        if(len(ips[0]) > 0): return "S", ips[0]
-        if(len(ips[1]) > 0): return "T", ips[1]
-        return None,[]
-
-    def get_ip_prefix_1(self, ips):
         ip_ary = []
         if(len(ips[0]) > 0):
             ip_ary.append(map((lambda x: "S"+x), ips[0]))
@@ -367,10 +364,13 @@ class AlertDatabase:
         return ip_ary
 
 
-    def get_max_score(self,ip):
-        #todo: check if it works
-        #probably some test is needed
-        return max([x[1] for x in self.database[ip]])
+    # def get_max_score(self,ip):
+    #     if not ip in self.database: return 0
+    #     return max([x[1] for x in self.database[ip]])
+
+    def get_category_cnt_by_ip(self, ip):
+        category_cnt = 0
+        
 
     def get_last_category_array(self, ip):
         category = []
@@ -415,7 +415,7 @@ class AlertDatabase:
     def add(self,da_alert):
         #print("da_alert: ", da_alert)
         if da_alert is None: return
-        ips = self.get_ip_prefix_1(da_alert["ips"])
+        ips = self.get_ip_prefix(da_alert["ips"])
         source_ips = ips[0]; target_ips = ips[1]
         ips_to_return = source_ips + target_ips
         print("source_ips: {}, target_ips: {}, category: {}".format(source_ips, target_ips, da_alert["category"]))
@@ -436,112 +436,11 @@ class AlertDatabase:
         #self.print_database()
         return ips_to_return
 
-class HeapOutput:
-    #how many probes do I have?
-    PROBES_CAPACITY = 5
-    ROOT_PATH = os.path.realpath(dirn(dirn(os.path.abspath(__file__))))
-    JSONS_PROBES_PATH = ROOT_PATH + '/jsons/probes/'
-    def __init__(self):
-        self.heap = []
-
-    def create_json_threat_file(self, threat):
-        json_out = json.dumps(threat)
-        if not os.path.exists(self.JSONS_PROBES_PATH):
-            os.makedirs(self.JSONS_PROBES_PATH)
-
-        # threat[1] = threat[Ip]
-        ip = threat[1]
-        threat_file_name = "{}{}.json".format(self.JSONS_PROBES_PATH,ip)
-        with open(threat_file_name, 'w') as f:
-            f.write(json_out)
-
-    def add(self, threat):
-        print("threat:", threat)
-
-        if self.PROBES_CAPACITY > len(self.heap):
-            heapq.heappush(self.heap,threat)
-            self.create_json_threat_file(threat)
-        else:
-            pop_val = heapq.heappushpop(self.heap,threat)
-            if pop_val != threat:
-                self.create_json_threat_file(threat)
-
-        #print('---------------------------------------------------------------')
-        #if self.heap: hprint(self.heap)
-
-    def recalculte_price():
-        #PRICE.calculate_price
-        #
-
-        pass
-
-    def recalculate_all_prices():
-        pass
-# class Price:
-#     ROOT_PATH = os.path.realpath(dirn(dirn(os.path.abspath(__file__))))
-#     CFG_JSON_PATH = ROOT_PATH + '/config/static_prices.json'
-#
-#     MAX_PRICE = 1000
-#     # algorithm for price calculation
-#     init_call = True
-#     cfg_static_prices =  defaultdict(dict)
-#     @classmethod
-#     def __init__(cls):
-#         cls.init_call = False
-#         cls.load_cfg()
-#
-#     @classmethod
-#     def load_cfg_recursion(cls,dict_in, dict_out,key_acc=""):
-#         for key, val in dict_in.items():
-#             if not isinstance(val,dict):
-#                 dict_out[key_acc][key] = val
-#             else:
-#                 k = (key_acc + "." + key if len(key_acc) > 0 else key)
-#                 cls.load_cfg_recursion(val, dict_out,k)
-#
-#     @classmethod
-#     def load_cfg(cls):
-#         with open(cls.CFG_JSON_PATH) as data_file:
-#             data = json.load(data_file)
-#             for cfg_line_dict in data:
-#                 cls.load_cfg_recursion(cfg_line_dict, cls.cfg_static_prices)
-#         print(cls.cfg_static_prices)
-#     @classmethod
-#     def get_static_price(cls, category):
-#         if(cls.init_call != False): cls.__init__()
-#         try:
-#             print(category, cls.cfg_static_prices[category])
-#             return cls.cfg_static_prices[category]["Score"]
-#         except Exception:
-#             #todo: log this in config / send email with json alert
-#             return cls.cfg_static_prices["Default"]["Score"]
-
-    # @classmethod
-    # def calculate_price_new(cls, ip_address):
-    #     database_row = cls.alert_database.add(ip_address)
-    #
-    #     return database_row
-
-
-    # @classmethod
-    # def calculate_price(cls, event):
-    #     if(cls.init_call != False): cls.__init__()
-    #     static_price = 0
-    #     for category in event["Category"]:
-    #         print("category: {}, price: {}".format(category,cls.get_statis_price(category)))
-    #         static_price += cls.cfg_static_prices[category]
-    #         print(static_price)
-
-
-
-
 class Filter(threading.Thread):
     def __init__(self,argv_param, dispatcher_options, alert_database_cfg, mapping_cfg, time_machine_params):
         threading.Thread.__init__(self)
         self.shared_array = list()
         self.shared_thread_event = threading.Event()
-        self.counter = 0
-        self.heap_output = HeapOutput()
         self.argv_param = argv_param
         self.alert_database = AlertDatabase(alert_database_cfg)
         self.global_filter_cnt = 0
@@ -586,6 +485,7 @@ class Filter(threading.Thread):
                 idea_alert = self.shared_array.pop()
                 #idea alert obsahuje vice pole ip address
                 #pridam to do databaze a vratim jaky adresy to jsou
+                print("calculate_price:", idea_alert)
                 ips = self.alert_database.add(idea_alert)
 #                print("PRINT: ",idea_alert, ips)
 
