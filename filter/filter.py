@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #python filter.py -i "u:hoststats-alerts,u:haddrscan-alerts"
 import logging
 import json
@@ -256,6 +257,7 @@ class AlertDatabase:
     def __init__(self, cfg_path):
         self.database = {}
         self.database_cfg = defaultdict(dict)
+        self.alert_probability = defaultdict(float)
         self.CFG_JSON_PATH = os.path.normpath(self.ROOT_PATH + "/" + cfg_path)
         self.load_cfg()
 
@@ -274,7 +276,7 @@ class AlertDatabase:
         return max_category
 
 
-    #def get_static_price(self, category):
+    #☑️ TESTED
     def get_static_price_from_cfg(self, category):
         try:
             return self.database_cfg[category]["Score"]
@@ -282,6 +284,7 @@ class AlertDatabase:
             #todo: log this in config / send email with json alert
             return self.database_cfg["Default"]["Score"]
 
+    #☑️ TESTED
     def get_static_price(self, category):
         category_score = 0
         if type(category) is list:
@@ -290,6 +293,21 @@ class AlertDatabase:
         else:
             category_score = max(self.get_static_price_from_cfg(category),category_score)
         return category_score
+
+    #☑️ TESTED
+    def get_category_with_max_score_from_last_alert(self,ip):
+        categories = self.get_last_category_array(ip)
+        print categories
+        best_category = ""; best_score = 0
+        if type(categories) is list:
+            for category in categories:
+                score = self.get_static_price_from_cfg(category)
+                if score > best_score:
+                    best_score = score
+                    best_category = category
+        else:
+            best_category = categories
+        return best_category
 
     def load_cfg_recursion(self,dict_in, dict_out,key_acc=""):
         for key, val in dict_in.items():
@@ -350,7 +368,7 @@ class AlertDatabase:
             data = json.load(data_file)
             for cfg_line_dict in data:
                 self.load_cfg_recursion(cfg_line_dict, self.database_cfg)
-
+    #☑️ TESTED
     def get_ip_prefix(self, ips):
         ip_ary = []
         if(len(ips[0]) > 0):
@@ -368,27 +386,37 @@ class AlertDatabase:
     #     if not ip in self.database: return 0
     #     return max([x[1] for x in self.database[ip]])
 
-    def get_category_cnt_by_ip(self, ip):
-        category_cnt = 0
-        
+    #☑️ TESTED
+    def get_category_cnt_by_ip(self, ip, category):
 
+        if ip in self.database and category in self.database[ip]:
+            return self.database[ip][category]
+        return 0
+
+    #☑️ TESTED
+    def get_categories_by_alert_index(self,ip,idx):
+        if ip in self.database:
+            return self.database[ip]["alerts"][idx][1]
+
+    #☑️ TESTED
     def get_last_category_array(self, ip):
         category = []
-        if(len(self.database[ip]["alerts"]) > 0):
-            category = self.database[ip]["alerts"][-1][1]
+        if(ip in self.database and len(self.database[ip]["alerts"]) > 0):
+            #category = self.database[ip]["alerts"][-1][1]
+            category = self.get_categories_by_alert_index(ip, -1)
         return category
 
-
+    #☑️ TESTED
     def get_last_score(self,ip):
-        if(len(self.database[ip]["alerts"]) > 0):
+        if(ip in self.database and len(self.database[ip]["alerts"]) > 0):
             return self.get_static_price(self.get_last_category_array(ip))
         return -1
 
+    #☑️ TESTED
     def get_last_alert_event(self, ip):
-        if(len(self.database[ip]["alerts"]) > 0):
+        if(ip in self.database and len(self.database[ip]["alerts"]) > 0):
             return self.database[ip]["alerts"][-1]
         return None
-
 
 
     def print_database(self):
@@ -397,17 +425,48 @@ class AlertDatabase:
             print ("{} -> {}/{}".format(key,value["cnt"]))
         print("-----DATABASE-----")
 
-    # def get_cnt_hour(self, ip):
-    #     return self.database[ip]["cnt_hour"]
-
+    #❌ predelat supervzorec
     def get_cnt(self, ip):
         return self.database[ip]["cnt"]
 
+    #☑️ TESTED
+    def add_to_probability_database(self,categories):
+        for category in categories:
+            self.alert_probability[category] += 1
+            self.alert_probability["cnt"] += 1
+            #❌ dodelat ukladani do souboru
+        return self.alert_probability
+
+    #☑️ TESTED
+    def get_category_probability(self, category):
+        return self.alert_probability[category] / self.alert_probability["cnt"]
+
+    #❌ otestovat
     def recalculate_cnt_hour(self, ip):
+        #todo: otestovat
         date_min = datetime.now(pytz.timezone("UTC")) - timedelta(hours=1)
         for idx, da_alert in enumerate(self.database[ip]["alerts"]):
             if(date_min > da_alert[0]):
+                categories = self.get_categories_by_alert_index(ip, idx)
+                for category in categories:
+                    self.database[ip][category] -= 1
+                self.database[ip]["cnt"] -= 1
                 del self.database[ip]["alerts"][idx]
+
+
+
+    def parse_category_to_ip(self, ip, category_ary):
+        #globalni citac category -> musim i odebirat
+        if ip not in self.database:
+            return
+
+        for category in category_ary:
+            if category not in self.database[ip]: self.database[ip][category] = 0
+            self.database[ip][category] += 1
+
+        return self.database[ip]
+
+
 
     def database(self):
         return self.database
@@ -419,8 +478,10 @@ class AlertDatabase:
         source_ips = ips[0]; target_ips = ips[1]
         ips_to_return = source_ips + target_ips
         print("source_ips: {}, target_ips: {}, category: {}".format(source_ips, target_ips, da_alert["category"]))
+        self.add_to_probability_database(da_alert["category"]) #pocita celkovou pravepodoost vyskytu
         for i in range(0,2):
             next_ary = ips[(i + 1) % 2]
+
             for ip in ips[i]:
                 minor_ips_ary = next_ary
                 if not ip in self.database: self.database[ip] = {"cnt": 0, "alerts": []}
@@ -431,6 +492,8 @@ class AlertDatabase:
                                           minor_ips_ary
                                          ])
                 self.database[ip]["cnt"] += 1
+                self.parse_category_to_ip(ip, da_alert["category"]) #pridava citac categorije k prislusnemu alertu
+
                 self.recalculate_cnt_hour(ip)
 
         #self.print_database()
