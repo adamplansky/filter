@@ -9,6 +9,8 @@ import pika
 #import ssl
 import argparse
 import cmd
+import math
+import random
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -254,16 +256,30 @@ class AlertExtractor:
 class AlertDatabase:
     ROOT_PATH = os.path.realpath(dirn(os.path.abspath(__file__)))
 
-    def __init__(self, cfg_path):
+    def __init__(self, cfg_path, probability_db_file):
         self.database = {}
         self.database_cfg = defaultdict(dict)
         self.alert_probability = defaultdict(float)
         self.CFG_JSON_PATH = os.path.normpath(self.ROOT_PATH + "/" + cfg_path)
+        self.PROBABILITY_DB_FILE = os.path.normpath(self.ROOT_PATH + "/" + probability_db_file)
         self.load_cfg()
+        self.load_probability()
+
+    #❌ DODELAT TESTY
+    def load_probability(self):
+        filename = self.PROBABILITY_DB_FILE
+        if os.path.isfile(filename):
+            self.alert_probability = defaultdict(float)
+            with open(filename) as data_file:
+                json_dict = json.load(data_file)
+                for k, v in json_dict.iteritems():
+                    self.alert_probability[k] = v
+
 
     def reload_cfg(self):
         self.database_cfg = defaultdict(dict)
         self.load_cfg()
+
 
     def get_most_significant_category_from_array(self, category_ary):
         max_score = 0
@@ -308,6 +324,12 @@ class AlertDatabase:
         else:
             best_category = categories
         return best_category
+
+    def load_cfg(self):
+        with open(self.CFG_JSON_PATH) as data_file:
+            data = json.load(data_file)
+            for cfg_line_dict in data:
+                self.load_cfg_recursion(cfg_line_dict, self.database_cfg)
 
     def load_cfg_recursion(self,dict_in, dict_out,key_acc=""):
         for key, val in dict_in.items():
@@ -363,11 +385,7 @@ class AlertDatabase:
         return capture_requests
 
 
-    def load_cfg(self):
-        with open(self.CFG_JSON_PATH) as data_file:
-            data = json.load(data_file)
-            for cfg_line_dict in data:
-                self.load_cfg_recursion(cfg_line_dict, self.database_cfg)
+
     #☑️ TESTED
     def get_ip_prefix(self, ips):
         ip_ary = []
@@ -388,7 +406,6 @@ class AlertDatabase:
 
     #☑️ TESTED
     def get_category_cnt_by_ip(self, ip, category):
-
         if ip in self.database and category in self.database[ip]:
             return self.database[ip][category]
         return 0
@@ -434,11 +451,17 @@ class AlertDatabase:
         for category in categories:
             self.alert_probability[category] += 1
             self.alert_probability["cnt"] += 1
-            #❌ dodelat ukladani do souboru
+
+        #❌ DODELAT TESTY
+        if self.alert_probability["cnt"] % 1000 == 0:
+             with open(self.PROBABILITY_DB_FILE, 'w') as data_file:
+                 j = json.dumps(self.alert_probability)
+                 print >> data_file, j
+
         return self.alert_probability
 
     #☑️ TESTED
-    def get_category_probability(self, category):
+    def get_probability_by_category(self, category):
         return self.alert_probability[category] / self.alert_probability["cnt"]
 
     #❌ otestovat
@@ -498,28 +521,89 @@ class AlertDatabase:
 
         #self.print_database()
         return ips_to_return
+class Score():
+    ROOT_PATH = os.path.realpath(dirn(os.path.abspath(__file__)))
+    #☑️ TESTED
+    TRESHOLD_SCANS = 2
+
+    #☑️ TESTED
+    @classmethod
+    def __init__(cls, cfg_path):
+        cls.file_path = os.path.normpath(cls.ROOT_PATH + "/" + cfg_path)
+        cls.modulo = 100
+        cls.p = 95
+        cls.load_cfg()
+
+    #☑️ TESTED
+    @classmethod
+    def load_cfg(cls):
+        with open(cls.file_path) as data_file:
+            for line in data_file:
+                try:
+                    if(line.strip()[0] == "#"): continue
+                    a, cls.modulo = map(int, line.split(" "))
+                    cls.p = cls.modulo - a
+                    print(cls.p, cls.modulo)
+                    break
+                except Exception as e:
+                    print e, "in file: {}".format(cls.file_path)
+
+    #☑️ TESTED
+    @classmethod
+    def scan_params(cls):
+        return cls.p, cls.modulo
+
+    #☑️ TESTED
+    @classmethod
+    def signum(cls,value):
+        return math.copysign(1, value)
+
+    #☑️ TESTED
+    @classmethod
+    def score_func(cls, score, probability):
+        return math.pow(2, score - 1) * (1 - probability) + math.pow(2, score - 1)
+
+    #☑️ TESTED
+    @classmethod
+    def get_score(cls, hour_number, score, probability):
+        return cls.signum(-hour_number+3) * cls.score_func(score, probability)
+
+    #☑️ TESTED
+    @classmethod
+    def scan_is_important(cls,cnt):
+        if ( (cnt + cls.p) % cls.modulo) == 0:
+            return True
+        return False
 
 class Filter(threading.Thread):
-    def __init__(self,argv_param, dispatcher_options, alert_database_cfg, mapping_cfg, time_machine_params):
+    ROOT_PATH = os.path.realpath(dirn(os.path.abspath(__file__)))
+    def __init__(self,argv_param, dispatcher_options, alert_database_cfg, mapping_cfg, time_machine_params, scan_alg_params_cfg, probability_db_file):
         threading.Thread.__init__(self)
         self.shared_array = list()
         self.shared_thread_event = threading.Event()
         self.argv_param = argv_param
-        self.alert_database = AlertDatabase(alert_database_cfg)
+        self.alert_database = AlertDatabase(alert_database_cfg, probability_db_file)
         self.global_filter_cnt = 0
         self.global_capture_filter_cnt = 0
         self.dispatcher_options = dispatcher_options
         self.mapping_cfg = mapping_cfg
         self.time_machine_params = time_machine_params
+        self.cfg_scan_alg_params = os.path.normpath(self.ROOT_PATH + "/" + scan_alg_params_cfg)
+        Score.__init__(scan_alg_params_cfg)
         CaptureRequest(self.time_machine_params)
         self.fd = None
         self.daemon = True
+
+
+
+
 
     def reload_cfg(self):
         if self.fd:
             self.fd.reload_cfg()
         if self.alert_database:
             self.alert_database.reload_cfg()
+        Score.load_cfg()
 
     def run(self):
         self.run_filter()
@@ -534,7 +618,6 @@ class Filter(threading.Thread):
         self.fd.start()
         self.calculate_price()
         #self.fd.join()
-
 
 
     def calculate_price(self):
@@ -553,15 +636,31 @@ class Filter(threading.Thread):
 #                print("PRINT: ",idea_alert, ips)
 
                 for ip in ips:
-                    #todo: cnt_hour pouze pokud add += 1 jinak nic
-                    score = self.alert_database.get_last_score(ip)
-                    cnt = self.alert_database.get_cnt(ip)
-                    #print("get score for ip {} score: {} cnt_hour: {}".format(ip,score, cnt_hour))
-                    #print("alert: ", self.alert_database.database[ip])
-                    self.global_filter_cnt += 1
-                    #print(bcolors.OKBLUE +  "alert_database[{}]: {}".format(ip,self.alert_database.database[ip]) + bcolors.ENDC)
 
-                    if(score > 1 or (score == 1 and (cnt % 100) == 3 ) ):
+                    to_capture = False
+                    score = self.alert_database.get_last_score(ip)
+                    self.global_filter_cnt += 1
+                    category = self.alert_database.get_category_with_max_score_from_last_alert(ip)
+                    probability = self.alert_database.get_probability_by_category(category)
+                    cnt_hour = self.alert_database.get_category_cnt_by_ip(ip,category)
+                    price = self.alert_database.get_static_price(category)
+                    score = Score.get_score(cnt_hour, price, probability)
+                    #category_hour_number = self.alert_database.get_category_with_max_score_from_last_alert(ip)
+
+                    if price < Score.TRESHOLD_SCANS and (Score.scan_is_important(cnt_hour) or random.randint(1, 250) == 42 ):
+                        #score < Score.TRESHOLD_SCANS == port scans
+                        score = 1
+                        to_capture = True
+                    else:
+                        to_capture = True
+
+
+                    if cnt_hour > 500:
+                        #pokud se neco zblazni, tak to nezachytavej
+                        to_capture = False
+
+
+                    if(to_capture == True and score >= 1):
                         #posli pozadavek o zachyt
                         CaptureRequest.send(self.alert_database.get_capture_params(ip))
                         self.global_capture_filter_cnt += 1
@@ -574,7 +673,9 @@ class CaptureRequest():
     init_call = True
     @classmethod
     def __init__(cls, params):
-
+        cls.max_simultaneously_captures = 50
+        cls.simultaneously_captures = 0
+        cls.capture_database = {}
         cls.init_call = False
         cls.addr_info = params
         print("CaptureRequest INIT: ", cls.addr_info)
@@ -599,6 +700,15 @@ class CaptureRequest():
             #Capture.do_remove("{} {}".format(direction, ip))
             #Capture.do_list("")
 
+    @classmethod
+    def get_list(cls):
+        pass
+
+    @classmethod
+    def remove_ip_from_capture(cls,ip):
+        #do_remove(args) => args[0] = direciton, args[1] = ip
+        #Catpure.do_redmove(args)
+        pass
 
 
     @classmethod
@@ -648,6 +758,8 @@ if __name__ == '__main__':
     parser.add_argument("-no_tmm", "--no_time_machine_manager", help="Time machine manager is disable, all filter output will be printed only to STDOUT", action="store_true")
     parser.add_argument("-cfg_mapping", help="Path to mapping config", action="store", default="../config/mapping")
     parser.add_argument("-cfg", help="Path to config", action="store", default="../config/static_prices.json")
+    parser.add_argument("-cfg_scan_algorithm_parameters", help="Path to scan algorithm parameters", action="store", default="../config/scan_algorithm_parameters")
+    parser.add_argument("-probability_db_file", help="Path to database file for probability", action="store", default="../config/probability_db")
 
     if len(sys.argv)==1:
         parser.print_help()
@@ -673,7 +785,7 @@ if __name__ == '__main__':
         tmm_params = [args.time_machine_manager_hostname, args.time_machine_manager_port]
     else:
         tmm_params = []
-    filter = Filter(xarg, dispatcher_options, args.cfg, args.cfg_mapping, tmm_params)
+    filter = Filter(xarg, dispatcher_options, args.cfg, args.cfg_mapping, tmm_params, args.cfg_scan_algorithm_parameters, args.probability_db_file)
     Shell(filter).cmdloop()
     # filter = Filter(xarg, dispatcher_options, args.cfg, args.cfg_mapping, tmm_params).run_filter()
     exit()

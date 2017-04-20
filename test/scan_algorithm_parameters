@@ -1,0 +1,8 @@
+# equation for scan algorithm is (p + 95) mod 100 == 0
+# where p is number of scans from one ip in one hour
+# first number is x and second number is y in first valid row in this equation (p + x) mod y
+# parser is finding first row where is two numbers delimited by space 'x y'
+# (p + 95) mod 100 means: there will be capture request for scan if
+# some detector detects category: reckon.scanning with same ip for 5, 105, 205, 305 times
+# start with x and repeat every y
+10 100

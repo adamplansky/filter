@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import unittest
 import os
@@ -8,7 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/filter" )
 
 
-from filter import AlertDatabase, AlertExtractor
+from filter import AlertDatabase, AlertExtractor, Filter, Score
 #import datetime
 from datetime import datetime, timedelta
 import pytz
@@ -94,11 +96,43 @@ class MyTest(unittest.TestCase):
 
     def test_get_category_probability(self):
         self.ad.add_to_probability_database(['Recon.Sniffing','Recon.Searching'])
-        self.assertEqual(self.ad.get_category_probability("Recon.Sniffing"),1.0/3)
+        self.assertEqual(self.ad.get_probability_by_category("Recon.Sniffing"),1.0/3)
 
     def test_get_category_with_max_score_from_last_alert(self):
         self.ad.add({'node': [u'cz.cesnet.au1.warden_filer', u'cz.cesnet.labrea'],'ips': [[u'201.214.56.9'],[u'195.113.253.123']],'category': [u'Recon.Scanning', 'Availability.DDoS'],'time':get_random_valid_time()})
         self.assertEqual(self.ad.get_category_with_max_score_from_last_alert("S201.214.56.9"),"Availability.DDoS")
+
+    def test_signum(self):
+        self.assertEqual(Score.signum(5),1)
+        self.assertEqual(Score.signum(0),1)
+        self.assertEqual(Score.signum(-1),-1)
+
+    def test_score_func(self):
+        self.assertEqual(Score.score_func(10,0.5),768.0)
+        self.assertEqual(Score.score_func(9,0.5),384)
+        self.assertEqual(Score.score_func(2,0.5),3)
+
+    def test_get_score(self):
+        #self.assertEqual(Score.signum(-1+4),1)
+        self.assertEqual(Score.get_score(1,10,0.5),768.0)
+
+    def test_treshold(self):
+        self.assertEqual(Score.TRESHOLD_SCANS, 2)
+
+    def test_is_important(self):
+        #❌ nacist score z configuraku
+        Score.__init__("../test/scan_algorithm_parameters")
+        self.assertEqual(Score.scan_params(), (90, 100))
+        self.assertEqual(Score.scan_is_important(2),False)
+        self.assertEqual(Score.scan_is_important(10),True)
+        self.assertEqual(Score.scan_is_important(110),True)
+        #self.assertEqual(Score.scan_is_important(136+150),True)
+        #self.assertEqual(Score.scan_is_important(200),False)
+
+    def test_score_scan_alg_params(self):
+        Score.__init__("../test/scan_algorithm_parameters")
+        self.assertEqual(Score.scan_params(), (90, 100))
+
 
 
 if __name__ == '__main__':
