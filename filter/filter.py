@@ -182,24 +182,14 @@ class RabbitMqDispatcher(threading.Thread):
 
 
 class AlertExtractor:
-    # @classmethod
-    # def extract_ip_and_direction(cls, dir_and_ip):
-    #     return dir_and_ip[:1], dir_and_ip[1:]
-
     @classmethod
     def parse_datetime(cls, datetime_string):
         #todo: not nice
         local_tz = pytz.timezone ("UTC")
         return local_tz.localize(datetime.strptime(datetime_string, '%Y-%m-%dT%H:%M:%SZ'))
 
-    # @classmethod
-    # def get_detect_time(cls, alert):
-    #     return cls.parse_datetime(alert["DetectTime"])
-
     @classmethod
     def append_valid_ips(cls, ary):
-        #todo: what if '217.31.192.0/20'
-        #'TargetIP4': ['217.31.192.0/20']
         arr = []
         for val in ary:
             try:
@@ -224,10 +214,6 @@ class AlertExtractor:
             target_ips += cls.append_valid_ips(event["TargetIP4"])
 
         return [source_ips, target_ips]
-
-    # @classmethod
-    # def parse_score(cls, alert):
-    #     return max(map(Price.get_static_price,alert["Category"]))
 
     @classmethod
     def parse_category(cls, alert):
@@ -265,9 +251,10 @@ class AlertDatabase:
         self.load_cfg()
         self.load_probability()
 
-    #❌ DODELAT TESTY
+    #☑️ TESTED
     def load_probability(self):
         filename = self.PROBABILITY_DB_FILE
+
         if os.path.isfile(filename):
             self.alert_probability = defaultdict(float)
             with open(filename) as data_file:
@@ -275,7 +262,7 @@ class AlertDatabase:
                 for k, v in json_dict.iteritems():
                     self.alert_probability[k] = v
 
-
+    #☑️ TESTED
     def reload_cfg(self):
         self.database_cfg = defaultdict(dict)
         self.load_cfg()
@@ -442,17 +429,13 @@ class AlertDatabase:
             print ("{} -> {}/{}".format(key,value["cnt"]))
         print("-----DATABASE-----")
 
-    #❌ predelat supervzorec
-    def get_cnt(self, ip):
-        return self.database[ip]["cnt"]
-
     #☑️ TESTED
     def add_to_probability_database(self,categories):
         for category in categories:
             self.alert_probability[category] += 1
             self.alert_probability["cnt"] += 1
 
-        #❌ DODELAT TESTY
+        print(self.alert_probability["cnt"], self.PROBABILITY_DB_FILE)
         if self.alert_probability["cnt"] % 1000 == 0:
              with open(self.PROBABILITY_DB_FILE, 'w') as data_file:
                  j = json.dumps(self.alert_probability)
@@ -627,7 +610,6 @@ class Filter(threading.Thread):
                 self.shared_thread_event.wait() # wait until self.shared_thread_event == True
 
             else:
-                self.counter += 1
                 idea_alert = self.shared_array.pop()
                 #idea alert obsahuje vice pole ip address
                 #pridam to do databaze a vratim jaky adresy to jsou

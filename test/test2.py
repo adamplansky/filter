@@ -25,7 +25,7 @@ class MyTest(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
     # def __init__(self):
-        self.ad = AlertDatabase("../config/static_prices.json")
+        self.ad = AlertDatabase("../config/static_prices.json", "../test/probability_db")
         self.first_alert = {'node': [u'cz.cesnet.au1.warden_filer', u'cz.cesnet.labrea'],'ips': [[u'201.214.56.9'],[u'195.113.253.123']],'category': [u'Recon.Scanning'],'time':get_random_valid_time()}
         self.ad.add(self.first_alert)
 
@@ -89,14 +89,33 @@ class MyTest(unittest.TestCase):
         a = self.first_alert
         self.assertEqual(self.ad.get_last_alert_event(u'S201.214.56.9'),[a["time"],a["category"],a["node"], ["T195.113.253.123"]])
 
+    def test_load_probability_db(self):
+        dd = defaultdict(float)
+        dd["Recon.Scanning"] = 1000
+        dd["cnt"] = 1001
+        dd["Abusive.Spam"] =  1.0
+        self.assertEqual(self.ad.alert_probability, dd)
+
+    def test_save_probability_db(self):
+        filename = "../test/probability_db1"
+        if os.path.exists(filename):
+            os.remove(filename)
+
+        ad = AlertDatabase("../config/static_prices.json", filename)
+        for i in range(1005):
+            ad.add(self.first_alert)
+        dd = defaultdict(float);dd["Recon.Scanning"] = 1005;dd["cnt"] = 1005
+        self.assertEqual(ad.alert_probability, dd)
+
+
     def test_add_to_probability_database(self):
         d = defaultdict(float)
-        d["Recon.Scanning"] = 1;d["Recon.Sniffing"] = 1;d["Recon.Searching"] = 1;d["cnt"] = 3
+        d["Recon.Scanning"] = 1000;d["Abusive.Spam"] = 1;d["Recon.Sniffing"] = 1;d["Recon.Searching"] = 1;d["cnt"] = 1003
         self.assertEqual(self.ad.add_to_probability_database(['Recon.Sniffing','Recon.Searching']), d)
 
     def test_get_category_probability(self):
         self.ad.add_to_probability_database(['Recon.Sniffing','Recon.Searching'])
-        self.assertEqual(self.ad.get_probability_by_category("Recon.Sniffing"),1.0/3)
+        self.assertEqual(self.ad.get_probability_by_category("Recon.Sniffing"),1.0/1003)
 
     def test_get_category_with_max_score_from_last_alert(self):
         self.ad.add({'node': [u'cz.cesnet.au1.warden_filer', u'cz.cesnet.labrea'],'ips': [[u'201.214.56.9'],[u'195.113.253.123']],'category': [u'Recon.Scanning', 'Availability.DDoS'],'time':get_random_valid_time()})
@@ -120,14 +139,11 @@ class MyTest(unittest.TestCase):
         self.assertEqual(Score.TRESHOLD_SCANS, 2)
 
     def test_is_important(self):
-        #❌ nacist score z configuraku
         Score.__init__("../test/scan_algorithm_parameters")
         self.assertEqual(Score.scan_params(), (90, 100))
         self.assertEqual(Score.scan_is_important(2),False)
         self.assertEqual(Score.scan_is_important(10),True)
         self.assertEqual(Score.scan_is_important(110),True)
-        #self.assertEqual(Score.scan_is_important(136+150),True)
-        #self.assertEqual(Score.scan_is_important(200),False)
 
     def test_score_scan_alg_params(self):
         Score.__init__("../test/scan_algorithm_parameters")
