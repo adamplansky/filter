@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/filter" )
 
 
-from filter import AlertDatabase, AlertExtractor, Filter, Score
+from filter import AlertDatabase, AlertExtractor, Filter, Score, MyJson
 #import datetime
 from datetime import datetime, timedelta
 import pytz
@@ -139,16 +139,19 @@ class MyTest(unittest.TestCase):
         self.assertEqual(Score.TRESHOLD_SCANS, 2)
 
     def test_is_important(self):
-        Score.__init__("../test/scan_algorithm_parameters")
-        self.assertEqual(Score.scan_params(), (90, 100))
+        Score.__init__("../test/scan_algorithm_parameters.json")
         self.assertEqual(Score.scan_is_important(2),False)
-        self.assertEqual(Score.scan_is_important(10),True)
-        self.assertEqual(Score.scan_is_important(110),True)
+        self.assertEqual(Score.scan_is_important(5),True)
+        self.assertEqual(Score.scan_is_important(105),True)
 
     def test_score_scan_alg_params(self):
-        Score.__init__("../test/scan_algorithm_parameters")
-        self.assertEqual(Score.scan_params(), (90, 100))
+        Score.__init__("../test/scan_algorithm_parameters.json")
+        self.assertEqual(Score.scan_params(), (95, 100, 500) )
 
+    def test_my_json(self):
+        d = MyJson.load_json_file_with_comments('../config/scan_algorithm_parameters.json')
+        d2 = {"first": 5,"every": 100,"limit": 500}
+        self.assertEqual(d,d2)
 
 
 if __name__ == '__main__':

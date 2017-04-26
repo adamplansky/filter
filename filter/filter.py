@@ -11,7 +11,7 @@ import argparse
 import cmd
 import math
 import random
-
+import re
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from collections import defaultdict
@@ -35,15 +35,6 @@ prepare = lambda e, field: str(e).center(field)
 
 DEBUG = False
 
-def hprint(heap, width=None):
-    if width is None:
-        width = max(len(str(e)) for e in heap)
-    height = int(log(len(heap), 2)) + 1
-    gap = ' ' * width
-    for h in range(height):
-        below = 2 ** (height - h - 1)
-        field = (2 * below - 1) * width
-        print(gap.join(prepare(e, field) for e in level(heap, h)))
 # logging.basicConfig(
 #     level=logging.DEBUG,
 #     format='(%(threadName)-10s) %(message)s',
@@ -57,6 +48,25 @@ class bcolors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+
+
+class MyJson:
+    #MyJson.load_json_file_with_comments('file')
+    ROOT_PATH = os.path.realpath(dirn(os.path.abspath(__file__)))
+    @classmethod
+    def load_json_file_with_comments(cls,filename):
+        filename = os.path.normpath(cls.ROOT_PATH + "/" + filename)
+        try:
+            with open(filename) as data_file:
+                input_str = re.sub(r'\\\n', '', data_file.read())
+                input_str = re.sub(r'#.*\n', '\n', input_str)
+                return json.loads(input_str)
+        except IOError:
+            print("Wrong file or file path",filename)
+        except ValueError:
+            print "Invalid json",filename
+        except Exception as e:
+            print e
 
 class FolderDispatcher(threading.Thread):
     # logging.basicConfig(filename="example.log",level=logging.DEBUG)
@@ -426,7 +436,7 @@ class AlertDatabase:
     def print_database(self):
         print("-----DATABASE-----")
         for key, value in self.database.items() :
-            print ("{} -> {}/{}".format(key,value["cnt"]))
+            print ("{} -> {}".format(key,value))
         print("-----DATABASE-----")
 
     #☑️ TESTED
@@ -440,7 +450,6 @@ class AlertDatabase:
              with open(self.PROBABILITY_DB_FILE, 'w') as data_file:
                  j = json.dumps(self.alert_probability)
                  print >> data_file, j
-
         return self.alert_probability
 
     #☑️ TESTED
@@ -505,36 +514,32 @@ class AlertDatabase:
         #self.print_database()
         return ips_to_return
 class Score():
-    ROOT_PATH = os.path.realpath(dirn(os.path.abspath(__file__)))
+    #ROOT_PATH = os.path.realpath(dirn(os.path.abspath(__file__)))
     #☑️ TESTED
     TRESHOLD_SCANS = 2
 
     #☑️ TESTED
     @classmethod
     def __init__(cls, cfg_path):
-        cls.file_path = os.path.normpath(cls.ROOT_PATH + "/" + cfg_path)
-        cls.modulo = 100
-        cls.p = 95
+        cls.file_path = cfg_path
+        cls.modulo = 100;
+        cls.p = 95;
+        cls.limit = 500
         cls.load_cfg()
 
     #☑️ TESTED
     @classmethod
     def load_cfg(cls):
-        with open(cls.file_path) as data_file:
-            for line in data_file:
-                try:
-                    if(line.strip()[0] == "#"): continue
-                    a, cls.modulo = map(int, line.split(" "))
-                    cls.p = cls.modulo - a
-                    print(cls.p, cls.modulo)
-                    break
-                except Exception as e:
-                    print e, "in file: {}".format(cls.file_path)
+        d = MyJson.load_json_file_with_comments(cls.file_path)
+        print("d:",d)
+        cls.modulo = d["every"]
+        cls.p = d["every"] - d["first"]
+        cls.limit = d["limit"]
 
     #☑️ TESTED
     @classmethod
     def scan_params(cls):
-        return cls.p, cls.modulo
+        return cls.p, cls.modulo, cls.limit
 
     #☑️ TESTED
     @classmethod
@@ -616,13 +621,13 @@ class Filter(threading.Thread):
                 print("calculate_price:", idea_alert)
                 ips = self.alert_database.add(idea_alert)
 #                print("PRINT: ",idea_alert, ips)
-
                 for ip in ips:
 
                     to_capture = False
                     score = self.alert_database.get_last_score(ip)
                     self.global_filter_cnt += 1
                     category = self.alert_database.get_category_with_max_score_from_last_alert(ip)
+
                     probability = self.alert_database.get_probability_by_category(category)
                     cnt_hour = self.alert_database.get_category_cnt_by_ip(ip,category)
                     price = self.alert_database.get_static_price(category)

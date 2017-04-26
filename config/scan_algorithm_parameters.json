@@ -1,0 +1,9 @@
+# equation for scan algorithm is (cnt_hour + ('every'-'first')) mod 'every'
+# where cnt_hour is number of scans from one ip in one hour with category = scan
+# there will be capture requrest for system Time Machine if
+# there are security event: reckon.scanning with same ip for 5x, 105x, 205x, 305x in one hour
+{
+  "first": 5,
+  "every": 100,
+  "limit": 500
+}
