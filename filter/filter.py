@@ -627,7 +627,7 @@ class Filter(threading.Thread):
                 ips = self.alert_database.add(idea_alert)
 #                print("PRINT: ",idea_alert, ips)
                 for ip in ips:
-
+                    print(ip)
                     score = self.alert_database.get_last_score(ip)
                     self.global_filter_cnt += 1
                     category = self.alert_database.get_category_with_max_score_from_last_alert(ip)
@@ -671,7 +671,7 @@ class CaptureHeap():
     def add_to_heap(self, capture_params, score):
         #zajima me cas!!
         self.delete_obsolete_items()
-        print capture_params
+        print "capture_params:", capture_params
         #print "self.max_capture_parallel_count", self.max_capture_parallel_count
         for capture_param in capture_params:
             dt = datetime.now(pytz.timezone("UTC")) + timedelta(seconds=capture_param["timeout"])
