@@ -671,6 +671,7 @@ class CaptureHeap():
     def add_to_heap(self, capture_params, score):
         #zajima me cas!!
         self.delete_obsolete_items()
+        print capture_params
         #print "self.max_capture_parallel_count", self.max_capture_parallel_count
         for capture_param in capture_params:
             dt = datetime.now(pytz.timezone("UTC")) + timedelta(seconds=capture_param["timeout"])
