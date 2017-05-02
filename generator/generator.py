@@ -51,7 +51,7 @@ with open(FILENAME1) as fin:
             if(i == alert_in_second):
                 alert_in_second = get_randomint()
                 i = 0
-                sleep(1)
+                #sleep(1)
 
             data = json.loads(line)
             # pprint("{} {}".format(data["CreateTime"],data["DetectTime"]))
