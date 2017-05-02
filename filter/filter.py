@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #python filter.py -i "u:hoststats-alerts,u:haddrscan-alerts"
-from memory_profiler import profile
+#from memory_profiler import profile
 
 import logging
 import json
@@ -612,7 +612,6 @@ class Filter(threading.Thread):
         self.calculate_price()
         #self.fd.join()
 
-    @profile
     def calculate_price(self):
         while True:
             if len(self.shared_array) == 0:
