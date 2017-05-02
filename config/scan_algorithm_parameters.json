@@ -5,5 +5,6 @@
 {
   "first": 5,
   "every": 100,
-  "limit": 500
+  "limit": 500,
+  "max_capture_parallel_count": 5
 }

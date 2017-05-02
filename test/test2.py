@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/filter" )
 
 
-from filter import AlertDatabase, AlertExtractor, Filter, Score, MyJson
+from filter import AlertDatabase, AlertExtractor, Filter, Score, MyJson, CaptureHeap
 #import datetime
 from datetime import datetime, timedelta
 import pytz
@@ -96,7 +96,7 @@ class MyTest(unittest.TestCase):
         dd["Abusive.Spam"] =  1.0
         self.assertEqual(self.ad.alert_probability, dd)
 
-    def test_save_probability_db(self):
+    def xtest_save_probability_db(self):
         filename = "../test/probability_db1"
         if os.path.exists(filename):
             os.remove(filename)
@@ -135,8 +135,8 @@ class MyTest(unittest.TestCase):
         #self.assertEqual(Score.signum(-1+4),1)
         self.assertEqual(Score.get_score(1,10,0.5),768.0)
 
-    def test_treshold(self):
-        self.assertEqual(Score.TRESHOLD_SCANS, 2)
+    def test_scan_price(self):
+        self.assertEqual(Score.SCAN_PRICE, 1)
 
     def test_is_important(self):
         Score.__init__("../test/scan_algorithm_parameters.json")
@@ -150,8 +150,42 @@ class MyTest(unittest.TestCase):
 
     def test_my_json(self):
         d = MyJson.load_json_file_with_comments('../config/scan_algorithm_parameters.json')
-        d2 = {"first": 5,"every": 100,"limit": 500}
+        d2 = {"first": 5,"every": 100,"limit": 500, "max_capture_parallel_count": 5}
         self.assertEqual(d,d2)
+
+    def test_capture_heap(self):
+        cp = CaptureHeap("../test/scan_algorithm_parameters.json")
+        #d = MyJson.load_json_file_with_comments('../config/scan_algorithm_parameters.json')
+        #d2 = {"first": 5,"every": 100,"limit": 500, "max_capture_parallel_count": 5}
+        self.assertEqual(cp.max_capture_parallel_count,1)
+
+    def test_get_capture_params(self):
+        x = self.ad.get_capture_params("S201.214.56.9")
+        y = [{'category': u'Recon.Scanning', 'ip_addr': 'S201.214.56.9', 'direction': 'src_ip', 'packets': 10, 'timeout': 100}]
+        self.assertEqual(x,y)
+
+
+    def test_delete_obsolete_items(self):
+        cp = CaptureHeap("../test/scan_algorithm_parameters.json")
+        self.ad.add({'node': [u'cz.cesnet.au1.warden_filer', u'cz.cesnet.labrea'],'ips': [[u'201.215.56.9'],[u'195.113.253.123']],'category': [u'Abusive.Harassment'],'time':get_random_valid_time()})
+        x = self.ad.get_capture_params("S201.215.56.9")
+        y = cp.add_to_heap(x, 10)
+        self.assertEqual(y,True)
+        x = self.ad.get_capture_params("S201.214.56.9")
+        y = cp.add_to_heap(x, 1)
+        self.assertEqual(y,False)
+
+
+    def test_add_to_heap(self):
+        cp = CaptureHeap("../test/scan_algorithm_parameters.json")
+        self.ad.add({'node': [u'cz.cesnet.au1.warden_filer', u'cz.cesnet.labrea'],'ips': [[u'201.215.56.9'],[u'195.113.253.123']],'category': [u'Abusive.Harassment'],'time':get_random_valid_time()})
+        x = [{'category': u'Recon.Scanning', 'ip_addr': 'S201.214.56.9', 'direction': 'src_ip', 'packets': 10, 'timeout': 0}]
+        y = cp.add_to_heap(x, 10)
+        self.assertEqual(y,True)
+        x = self.ad.get_capture_params("S201.214.56.9")
+        y = cp.add_to_heap(x, 1)
+        self.assertEqual(y,True)
+
 
 
 if __name__ == '__main__':

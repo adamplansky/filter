@@ -13,7 +13,7 @@ import math
 import random
 import re
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
+import heapq
 from collections import defaultdict
 from os.path import dirname as dirn
 import glob
@@ -25,16 +25,9 @@ import time
 from mapping import Mapping
 from time_machine_capture import Capture, Sock
 from datetime import datetime, timedelta #, timezone
-from math import log
-
-first = lambda h: 2**h - 1      # H stands for level height
-last = lambda h: first(h + 1)
-level = lambda heap, h: heap[first(h):last(h)]
-prepare = lambda e, field: str(e).center(field)
 
 
 DEBUG = False
-
 # logging.basicConfig(
 #     level=logging.DEBUG,
 #     format='(%(threadName)-10s) %(message)s',
@@ -51,7 +44,6 @@ class bcolors:
 
 
 class MyJson:
-    #MyJson.load_json_file_with_comments('file')
     ROOT_PATH = os.path.realpath(dirn(os.path.abspath(__file__)))
     @classmethod
     def load_json_file_with_comments(cls,filename):
@@ -337,8 +329,6 @@ class AlertDatabase:
                 self.load_cfg_recursion(val, dict_out,k)
     @classmethod
     def get_time_machine_direction(cls,direction):
-        #todo predelat to na enum??
-        #wtf proc tam je BS a BT a BB
          return {
              'S':"src_ip",
              'T':"dst_ip",
@@ -347,6 +337,7 @@ class AlertDatabase:
              'BB':"bidir_ip",
              }.get(direction)
 
+    #☑️ TESTED
     def get_capture_params(self, ip):
         sources = []; targets = [];
         last_alert = self.get_last_alert_event(ip)
@@ -516,7 +507,7 @@ class AlertDatabase:
 class Score():
     #ROOT_PATH = os.path.realpath(dirn(os.path.abspath(__file__)))
     #☑️ TESTED
-    TRESHOLD_SCANS = 2
+    SCAN_PRICE = 1
 
     #☑️ TESTED
     @classmethod
@@ -525,6 +516,7 @@ class Score():
         cls.modulo = 100;
         cls.p = 95;
         cls.limit = 500
+        cls.max_capture_parallel_count = 200
         cls.load_cfg()
 
     #☑️ TESTED
@@ -535,6 +527,9 @@ class Score():
         cls.modulo = d["every"]
         cls.p = d["every"] - d["first"]
         cls.limit = d["limit"]
+        cls.max_capture_parallel_count = d["max_capture_parallel_count"]
+
+
 
     #☑️ TESTED
     @classmethod
@@ -553,8 +548,19 @@ class Score():
 
     #☑️ TESTED
     @classmethod
-    def get_score(cls, hour_number, score, probability):
-        return cls.signum(-hour_number+3) * cls.score_func(score, probability)
+    def get_score(cls, cnt_hour, price, probability):
+        return cls.signum(-cnt_hour+3) * cls.score_func(price, probability)
+
+
+    @classmethod
+    def get_score_alg(cls, cnt_hour, price, probability):
+        if cnt_hour > cls.limit: return -1
+        if price > cls.SCAN_PRICE:
+            return cls.get_score(cnt_hour, price, probability)
+        elif price == cls.SCAN_PRICE and (cls.scan_is_important(cnt_hour) or random.randint(1, 250) == 42 ):
+            return 1
+        return -1
+
 
     #☑️ TESTED
     @classmethod
@@ -577,14 +583,11 @@ class Filter(threading.Thread):
         self.mapping_cfg = mapping_cfg
         self.time_machine_params = time_machine_params
         self.cfg_scan_alg_params = os.path.normpath(self.ROOT_PATH + "/" + scan_alg_params_cfg)
+        self.capture_heap = CaptureHeap(scan_alg_params_cfg)
         Score.__init__(scan_alg_params_cfg)
         CaptureRequest(self.time_machine_params)
         self.fd = None
         self.daemon = True
-
-
-
-
 
     def reload_cfg(self):
         if self.fd:
@@ -623,7 +626,6 @@ class Filter(threading.Thread):
 #                print("PRINT: ",idea_alert, ips)
                 for ip in ips:
 
-                    to_capture = False
                     score = self.alert_database.get_last_score(ip)
                     self.global_filter_cnt += 1
                     category = self.alert_database.get_category_with_max_score_from_last_alert(ip)
@@ -631,30 +633,63 @@ class Filter(threading.Thread):
                     probability = self.alert_database.get_probability_by_category(category)
                     cnt_hour = self.alert_database.get_category_cnt_by_ip(ip,category)
                     price = self.alert_database.get_static_price(category)
-                    score = Score.get_score(cnt_hour, price, probability)
-                    #category_hour_number = self.alert_database.get_category_with_max_score_from_last_alert(ip)
+                    score = Score.get_score_alg(cnt_hour, price, probability)
+                    capture_params = self.alert_database.get_capture_params(ip)
 
-                    if price < Score.TRESHOLD_SCANS and (Score.scan_is_important(cnt_hour) or random.randint(1, 250) == 42 ):
-                        #score < Score.TRESHOLD_SCANS == port scans
-                        score = 1
-                        to_capture = True
-                    else:
-                        to_capture = True
-
-
-                    if cnt_hour > 500:
-                        #pokud se neco zblazni, tak to nezachytavej
-                        to_capture = False
-
-
-                    if(to_capture == True and score >= 1):
-                        #posli pozadavek o zachyt
-                        CaptureRequest.send(self.alert_database.get_capture_params(ip))
+                    if(score >= 1 and self.capture_heap.add_to_heap(capture_params, score)):
+                        CaptureRequest.send(capture_params)
                         self.global_capture_filter_cnt += 1
                         print(bcolors.WARNING +  "{}/{}".format(self.global_capture_filter_cnt,self.global_filter_cnt ) + bcolors.ENDC)
                     #else:
                         #print("Capture requirments: " +bcolors.WARNING +  "Not satisfied" + bcolors.ENDC)
 
+class CaptureHeap():
+    def __init__(self, cfg_path):
+        self.heap = []
+        self.file_path = cfg_path
+        self.max_capture_parallel_count = 200
+        self.load_cfg()
+        self.pop_item = None
+
+    #☑️ TESTED
+    def load_cfg(self):
+        d = MyJson.load_json_file_with_comments(self.file_path)
+        self.max_capture_parallel_count = d["max_capture_parallel_count"]
+
+    #☑️ TESTED
+    def delete_obsolete_items(self):
+        dt_now = datetime.now(pytz.timezone("UTC"))
+        for h in self.heap:
+            if(h[1] < dt_now):
+                self.heap.remove(h)
+
+        heapq.heapify(self.heap)
+
+    #☑️ TESTED
+    def add_to_heap(self, capture_params, score):
+        #zajima me cas!!
+        self.delete_obsolete_items()
+        print "self.max_capture_parallel_count", self.max_capture_parallel_count
+        for capture_param in capture_params:
+            dt = datetime.now(pytz.timezone("UTC")) + timedelta(seconds=capture_param["timeout"])
+            x = (score, dt)
+
+            if( self.max_capture_parallel_count > len(self.heap) ) :
+                print("push")
+                heapq.heappush(self.heap,x)
+            #pokud jsou vsechny policka zabrany a
+            #pokud je score o 20 procent vetsi tak to zachytavam
+            elif ( (self.get_top()[0] * 1.2) < score) :
+                print("pushpop")
+                self.pop_item = heapq.heappushpop(self.heap,x)
+            else:
+                return False
+
+        print(bcolors.OKGREEN + "self.heap" + str(self.heap) +bcolors.ENDC )
+        return True
+
+    def get_top(self):
+        return self.heap[0]
 
 class CaptureRequest():
     init_call = True
@@ -723,6 +758,7 @@ class Shell(cmd.Cmd):
             self.filter.start()
             self.active_t = True
 
+
     def do_reload_config(self,args):
         self.filter.reload_cfg()
 
@@ -745,7 +781,7 @@ if __name__ == '__main__':
     parser.add_argument("-no_tmm", "--no_time_machine_manager", help="Time machine manager is disable, all filter output will be printed only to STDOUT", action="store_true")
     parser.add_argument("-cfg_mapping", help="Path to mapping config", action="store", default="../config/mapping")
     parser.add_argument("-cfg", help="Path to config", action="store", default="../config/static_prices.json")
-    parser.add_argument("-cfg_scan_algorithm_parameters", help="Path to scan algorithm parameters", action="store", default="../config/scan_algorithm_parameters")
+    parser.add_argument("-cfg_scan_algorithm_parameters", help="Path to scan algorithm parameters", action="store", default="../config/scan_algorithm_parameters.json")
     parser.add_argument("-probability_db_file", help="Path to database file for probability", action="store", default="../config/probability_db")
 
     if len(sys.argv)==1:
