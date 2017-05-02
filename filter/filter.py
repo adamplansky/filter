@@ -78,6 +78,7 @@ class FolderDispatcher(threading.Thread):
         self.JSONS_PATH = os.path.normpath(self.ROOT_PATH + "/" + json_path)
         self.m = Mapping(mapping_cfg)
         self.mapping_cfg = mapping_cfg
+        self.freq_second = defaultdict(float)
         print("FolderDispatcher JSON PATH: " + self.JSONS_PATH)
 
     def run(self):
@@ -108,6 +109,7 @@ class FolderDispatcher(threading.Thread):
         return self.move_to_folder(path, self.JSONS_ERROR_PROCESSED_PATH)
 
     def folder_dispatcher(self):
+        cnt = 0
         while True:
 
             #use relative path instad of absolute
@@ -121,6 +123,10 @@ class FolderDispatcher(threading.Thread):
                         data = json.load(data_file)
                         idea_alert = self.m.map_alert_to_hash(data)
                         da_alert = AlertExtractor.parse_alert(idea_alert)
+                        self.freq_second[datetime.now().strftime("%d%m%Y%H:%M:%S")] += 1
+                        if cnt % 1000 == 0:
+                            print self.freq_second
+                        #self.freq_second
                         self.move_to_processed_folder( filename )
                         if da_alert is None:
                             continue
