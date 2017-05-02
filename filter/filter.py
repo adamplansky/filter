@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #python filter.py -i "u:hoststats-alerts,u:haddrscan-alerts"
+from memory_profiler import profile
+
 import logging
 import json
 import sys
@@ -302,7 +304,7 @@ class AlertDatabase:
     #☑️ TESTED
     def get_category_with_max_score_from_last_alert(self,ip):
         categories = self.get_last_category_array(ip)
-        print categories
+        #print categories
         best_category = ""; best_score = 0
         if type(categories) is list:
             for category in categories:
@@ -369,7 +371,7 @@ class AlertDatabase:
                 capture_parameters["ip_addr"] = target_ip
                 capture_requests.append(capture_parameters)
 
-        print(capture_requests)
+        #print(capture_requests)
         return capture_requests
 
 
@@ -436,7 +438,7 @@ class AlertDatabase:
             self.alert_probability[category] += 1
             self.alert_probability["cnt"] += 1
 
-        print(self.alert_probability["cnt"], self.PROBABILITY_DB_FILE)
+        #print(self.alert_probability["cnt"], self.PROBABILITY_DB_FILE)
         if self.alert_probability["cnt"] % 1000 == 0:
              with open(self.PROBABILITY_DB_FILE, 'w') as data_file:
                  j = json.dumps(self.alert_probability)
@@ -483,7 +485,7 @@ class AlertDatabase:
         ips = self.get_ip_prefix(da_alert["ips"])
         source_ips = ips[0]; target_ips = ips[1]
         ips_to_return = source_ips + target_ips
-        print("source_ips: {}, target_ips: {}, category: {}".format(source_ips, target_ips, da_alert["category"]))
+        #print("source_ips: {}, target_ips: {}, category: {}".format(source_ips, target_ips, da_alert["category"]))
         self.add_to_probability_database(da_alert["category"]) #pocita celkovou pravepodoost vyskytu
         for i in range(0,2):
             next_ary = ips[(i + 1) % 2]
@@ -610,7 +612,7 @@ class Filter(threading.Thread):
         self.calculate_price()
         #self.fd.join()
 
-
+    @profile
     def calculate_price(self):
         while True:
             if len(self.shared_array) == 0:
@@ -621,7 +623,7 @@ class Filter(threading.Thread):
                 idea_alert = self.shared_array.pop()
                 #idea alert obsahuje vice pole ip address
                 #pridam to do databaze a vratim jaky adresy to jsou
-                print("calculate_price:", idea_alert)
+                #print("calculate_price:", idea_alert)
                 ips = self.alert_database.add(idea_alert)
 #                print("PRINT: ",idea_alert, ips)
                 for ip in ips:
@@ -669,23 +671,23 @@ class CaptureHeap():
     def add_to_heap(self, capture_params, score):
         #zajima me cas!!
         self.delete_obsolete_items()
-        print "self.max_capture_parallel_count", self.max_capture_parallel_count
+        #print "self.max_capture_parallel_count", self.max_capture_parallel_count
         for capture_param in capture_params:
             dt = datetime.now(pytz.timezone("UTC")) + timedelta(seconds=capture_param["timeout"])
             x = (score, dt)
 
             if( self.max_capture_parallel_count > len(self.heap) ) :
-                print("push")
+                #print("push")
                 heapq.heappush(self.heap,x)
             #pokud jsou vsechny policka zabrany a
             #pokud je score o 20 procent vetsi tak to zachytavam
             elif ( (self.get_top()[0] * 1.2) < score) :
-                print("pushpop")
+                #print("pushpop")
                 self.pop_item = heapq.heappushpop(self.heap,x)
             else:
                 return False
 
-        print(bcolors.OKGREEN + "self.heap" + str(self.heap) +bcolors.ENDC )
+        #print(bcolors.OKGREEN + "self.heap" + str(self.heap) +bcolors.ENDC )
         return True
 
     def get_top(self):
@@ -712,7 +714,7 @@ class CaptureRequest():
 
         if cls.connection_is_established():
             for capture_request in capture_requests:
-                print(bcolors.HEADER + "Time machine manager: ON" +bcolors.ENDC + "\n" + bcolors.OKGREEN + "{} {} {} {} {}".format(capture_request["direction"], capture_request["ip_addr"][1:], ("{}_{}".format(capture_request["category"],capture_request["ip_addr"])), capture_request["packets"], capture_request["timeout"]) + bcolors.ENDC)
+                #print(bcolors.HEADER + "Time machine manager: ON" +bcolors.ENDC + "\n" + bcolors.OKGREEN + "{} {} {} {} {}".format(capture_request["direction"], capture_request["ip_addr"][1:], ("{}_{}".format(capture_request["category"],capture_request["ip_addr"])), capture_request["packets"], capture_request["timeout"]) + bcolors.ENDC)
                 Capture.do_add("{} {} {} {} {}".format(capture_request["direction"], capture_request["ip_addr"][1:], ("{}_{}".format(capture_request["category"],capture_request["ip_addr"])), capture_request["packets"], capture_request["timeout"]))
         else:
             print(bcolors.HEADER + "Time machine manager: OFF" +bcolors.ENDC + "\n" +bcolors.OKGREEN + "{} {} {} {} {}".format(capture_request["direction"], capture_request["ip_addr"][1:], ("{}_{}".format(capture_request["category"],capture_request["ip_addr"])), capture_request["packets"], capture_request["timeout"]) + bcolors.ENDC)

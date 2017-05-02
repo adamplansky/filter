@@ -41,38 +41,43 @@ def get_randomint():
 
 #FILENAME1 = 'warden_161001_161007_sorted.json'
 FILENAME1 = 'warden_data.json'
+FILENAME1 = 'warden_01_sorted_remove_test_NEMEA'
+
 #FILENAME1 = 'warden_161001_161007.json'
 with open(FILENAME1) as fin:
     alert_in_second = get_randomint()
     for line in fin:
-        if(i == alert_in_second):
-            alert_in_second = get_randomint()
-            i = 0
-            sleep(1)
+        try:
+            if(i == alert_in_second):
+                alert_in_second = get_randomint()
+                i = 0
+                sleep(1)
 
-        data = json.loads(line)
-        # pprint("{} {}".format(data["CreateTime"],data["DetectTime"]))
-        dt = parser.parse(data["DetectTime"])
-        if data.get("CreateTime"):
-            ct = parser.parse(data["CreateTime"])
+            data = json.loads(line)
+            # pprint("{} {}".format(data["CreateTime"],data["DetectTime"]))
+            dt = parser.parse(data["DetectTime"])
+            if data.get("CreateTime"):
+                ct = parser.parse(data["CreateTime"])
 
-        diff_ct_dt = (ct - dt).seconds
-        print("ct:{} dt:{} diff: {}".format(ct,dt, diff_ct_dt))
-        t = time()
-        detect_time_g = gmtime(t - diff_ct_dt)
-        create_time_g = gmtime(t)
-        detect_time_iso = get_date_iso(detect_time_g)
-        create_time_iso = get_date_iso(create_time_g)
-        print("ct:{} dt:{}".format(create_time_iso, detect_time_iso))
-        #print('-------')
-        data["DetectTime"] = detect_time_iso
-        if data.get("CreateTime"):
-            data["CreateTime"] = create_time_iso
-        else:
-            data["CreateTime"] = get_date_iso(gmtime())
-        pprint("ip: {}, ct:{}, ct:{}, diff: {}, category: {}".format(data["Source"],data["CreateTime"],data["DetectTime"],diff_ct_dt,data["Category"]))
-        i+=1
-        dump_json_to_file(data, uuid = True)
+            diff_ct_dt = (ct - dt).seconds
+            print("ct:{} dt:{} diff: {}".format(ct,dt, diff_ct_dt))
+            t = time()
+            detect_time_g = gmtime(t - diff_ct_dt)
+            create_time_g = gmtime(t)
+            detect_time_iso = get_date_iso(detect_time_g)
+            create_time_iso = get_date_iso(create_time_g)
+            print("ct:{} dt:{}".format(create_time_iso, detect_time_iso))
+            #print('-------')
+            data["DetectTime"] = detect_time_iso
+            if data.get("CreateTime"):
+                data["CreateTime"] = create_time_iso
+            else:
+                data["CreateTime"] = get_date_iso(gmtime())
+            pprint("ip: {}, ct:{}, ct:{}, diff: {}, category: {}".format(data["Source"],data["CreateTime"],data["DetectTime"],diff_ct_dt,data["Category"]))
+            i+=1
+            dump_json_to_file(data, uuid = True)
+        except Exception:
+            pass
 
 
 
