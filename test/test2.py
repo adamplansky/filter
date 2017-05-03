@@ -10,7 +10,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/filter" )
 
 
-from filter import AlertDatabase, AlertExtractor, Filter, Score, MyJson, CaptureHeap
+from filter import AlertDatabase, AlertExtractor, Filter, Score, MyJson, CaptureHeap,IdeaMapping
+from mapping import Mapping
 #import datetime
 from datetime import datetime, timedelta
 import pytz
@@ -185,6 +186,19 @@ class MyTest(unittest.TestCase):
         x = self.ad.get_capture_params("S201.214.56.9")
         y = cp.add_to_heap(x, 1)
         self.assertEqual(y,True)
+
+    def test_mapping(self):
+        idea =  {u'Node': [{u'SW': [u'Nemea', u'HostStatsNemea'], u'Type': [u'Flow', u'Statistical'], u'Name': u'cz.cesnet.nemea.hoststats'}], u'Category': [u'Recon.Scanning'], u'EventTime': u'2017-01-01T02:06:00Z', u'Description': u'Horizontal port scan', u'ConnCount': 655, u'CeaseTime': u'2017-01-01T02:10:53Z', u'Format': u'IDEA0', u'ID': u'1bdfff5e-6ad4-4e63-98f6-e3e350996a5f', u'Source': [{u'IP4': [u'185.35.62.107'], u'Proto': [u'tcp']}], u'FlowCount': 655, u'DetectTime': u'2017-05-02T18:13:59Z', u'CreateTime': u'2017-05-02T18:13:59Z'}
+        m = Mapping("../config/mapping")
+        h = m.map_alert_to_hash(idea)
+
+        dis = {'Node': [{u'Type': [u'Flow', u'Statistical'], u'SW': [u'Nemea', u'HostStatsNemea'], u'Name': u'cz.cesnet.nemea.hoststats'}], 'DetectTime': u'2017-05-02T18:13:59Z', 'SourceIP6': None, 'SourceIP4': [u'185.35.62.107'], 'TargetIP4': None, 'Category': [u'Recon.Scanning'], 'TargetIP6': None}
+        self.assertEqual(h, dis)
+
+        h = IdeaMapping.map_alert_to_hash(idea)
+        self.assertEqual(h, dis)
+
+
 
 
 

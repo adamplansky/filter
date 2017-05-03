@@ -121,13 +121,18 @@ class FolderDispatcher(threading.Thread):
                 with open(filename) as data_file:
                     try:
                         data = json.load(data_file)
-                        idea_alert = self.m.map_alert_to_hash(data)
+                        print "data: ", data
+                        #idea_alert = self.m.map_alert_to_hash(data)
+                        idea_alert = IdeaMapping.map_alert_to_hash(data)
+                        #print "idea_alert: ", idea_alert
                         da_alert = AlertExtractor.parse_alert(idea_alert)
                         self.freq_second[datetime.now().strftime("%d%m%Y%H:%M:%S")] += 1
-                        if cnt % 1000 == 0:
-                            print self.freq_second
+                        #if cnt % 1000 == 0:
+                        print self.freq_second
                         #self.freq_second
-                        self.move_to_processed_folder( filename )
+                        print bcolors.WARNING +  str(cnt) + bcolors.ENDC
+                        cnt += 1
+                        #self.move_to_processed_folder( filename )
                         if da_alert is None:
                             continue
                         else:
@@ -138,6 +143,8 @@ class FolderDispatcher(threading.Thread):
                         #self.move_to_error_folder(filename)
                 self.shared_thread_event.set()
             time.sleep(1)
+
+
 class RabbitMqDispatcher(threading.Thread):
     def __init__(self, shared_array, event, dispatcher_options_array, mapping_cfg):
         self.m = Mapping(mapping_cfg)
@@ -190,6 +197,39 @@ class RabbitMqDispatcher(threading.Thread):
         channel.basic_consume(callback, queue=queue_name, no_ack=True)
         channel.start_consuming()
 
+
+class IdeaMapping:
+    @classmethod
+    def map_alert_to_hash(self, idea):
+        print '-------------------'
+
+        h = {}
+        try:
+            h["Node"] = idea["Node"]
+            h["DetectTime"] = idea["DetectTime"]
+            h["Category"] = idea["Category"]
+
+            if "Source" in idea and "IP4" in idea["Source"][0]:
+                h["SourceIP4"] = idea["Source"][0]["IP4"]
+            else:
+                h["SourceIP4"] = None
+            if "Target" in idea and "IP4" in idea["Target"][0]:
+                h["TargetIP4"] = idea["Target"][0]["IP4"]
+            else:
+                h["TargetIP4"] = None
+            if "Source" in idea and "IP6" in idea["Source"][0]:
+                print
+                h["SourceIP6"] = idea["Source"][0]["IP6"]
+            else:
+                h["SourceIP6"] = None
+
+            if "Target" in idea and "IP6" in idea["Target"][0]:
+                h["TargetIP6"] = idea["Target"][0]["IP6"]
+            else:
+                h["TargetIP6"] = None
+        except Exception as e:
+            print e
+        return h
 
 class AlertExtractor:
     @classmethod
@@ -607,6 +647,7 @@ class Filter(threading.Thread):
     def run(self):
         self.run_filter()
 
+
     def run_filter(self):
         logging.debug('running Filter')
         print("self.argv_param:", self.argv_param)
@@ -623,7 +664,6 @@ class Filter(threading.Thread):
             if len(self.shared_array) == 0:
                 self.shared_thread_event.clear()
                 self.shared_thread_event.wait() # wait until self.shared_thread_event == True
-
             else:
                 idea_alert = self.shared_array.pop()
                 #idea alert obsahuje vice pole ip address
@@ -676,7 +716,7 @@ class CaptureHeap():
     def add_to_heap(self, capture_params, score):
         #zajima me cas!!
         self.delete_obsolete_items()
-        print "capture_params:", capture_params
+        if capture_params == None: return
         #print "self.max_capture_parallel_count", self.max_capture_parallel_count
         for capture_param in capture_params:
             dt = datetime.now(pytz.timezone("UTC")) + timedelta(seconds=capture_param["timeout"])
@@ -817,6 +857,8 @@ if __name__ == '__main__':
     else:
         tmm_params = []
     filter = Filter(xarg, dispatcher_options, args.cfg, args.cfg_mapping, tmm_params, args.cfg_scan_algorithm_parameters, args.probability_db_file)
-    Shell(filter).cmdloop()
+    filter.start()
+    filter.join(5)
+    #Shell(filter).cmdloop()
     # filter = Filter(xarg, dispatcher_options, args.cfg, args.cfg_mapping, tmm_params).run_filter()
     exit()

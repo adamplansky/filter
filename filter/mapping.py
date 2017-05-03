@@ -50,7 +50,7 @@ class Mapping:
         jq = ', '.join([str(x) for x in ary_from])
         formats[key] = {val: {"jq": jq, "map_to": ary_to}}
         return formats
-
+    
     def map_alert_to_hash(self, idea_alert):
         hash_formated = {}
         for k in self.mapping_hash.keys():
