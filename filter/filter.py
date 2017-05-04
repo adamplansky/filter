@@ -186,9 +186,10 @@ class RabbitMqDispatcher(threading.Thread):
         print(' [*] Waiting for ideas. To exit press CTRL+C')
 
         def callback(ch, method, properties, body):
-            data = json.loads(json.loads(body.decode("utf-8")))
-            #print("data: ",data,data.__class__)
-            idea_alert = self.m.map_alert_to_hash(data)
+            #data = json.loads(json.loads(body.decode("utf-8")))
+            data = json.loads(body)
+            idea_alert = IdeaMapping.map_alert_to_hash(data)
+            #idea_alert = self.m.map_alert_to_hash(data)
             #print("idea_alert: ",idea_alert)
             da_alert = AlertExtractor.parse_alert(idea_alert)
             if da_alert is not None:
@@ -201,7 +202,7 @@ class RabbitMqDispatcher(threading.Thread):
 class IdeaMapping:
     @classmethod
     def map_alert_to_hash(self, idea):
-        print '-------------------'
+
 
         h = {}
         try:
