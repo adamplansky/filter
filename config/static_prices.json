@@ -1,28 +1,32 @@
 [
   {
     "Default": {
-      "Packets": 10000,
+      "Score": 5,
       "Direction": "S",
-      "Score": 10,
-      "Timeout": 300
+      "Timeout": 300,
+      "Packets": 10000
     }
   },
   {
     "Abusive": {
       "Harassment": {
-        "Score": 10
+        "Score": 4,
+        "Timeout": 200,
+        "Packets": 2000
       },
       "Violence": {
-        "Score": 10
+        "Score": 4,
+        "Timeout": 100,
+        "Packets": 1000
       },
       "Sexual": {
-        "Score": 10
+        "Score": 4
       },
       "Spam": {
-        "Score": 10
+        "Score": 6
       },
       "Child": {
-        "Score": 10
+        "Score": 7
       }
     }
   },

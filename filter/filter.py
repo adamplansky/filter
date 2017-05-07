@@ -565,8 +565,9 @@ class Score():
         cls.modulo = 100;
         cls.p = 95;
         cls.limit = 500
-        cls.max_capture_parallel_count = 200
+        cls.max_parallel_capture_cnt = 200
         cls.load_cfg()
+        cls.random_scan = 250
 
     #☑️ TESTED
     @classmethod
@@ -576,8 +577,8 @@ class Score():
         cls.modulo = d["every"]
         cls.p = d["every"] - d["first"]
         cls.limit = d["limit"]
-        cls.max_capture_parallel_count = d["max_capture_parallel_count"]
-
+        cls.max_parallel_capture_cnt = d["max_parallel_capture_cnt"]
+        cls.random_scan = d["random_scan"]
 
 
     #☑️ TESTED
@@ -606,7 +607,7 @@ class Score():
         if cnt_hour > cls.limit: return -1
         if price > cls.SCAN_PRICE:
             return cls.get_score(cnt_hour, price, probability)
-        elif price == cls.SCAN_PRICE and (cls.scan_is_important(cnt_hour) or random.randint(1, 250) == 42 ):
+        elif price == cls.SCAN_PRICE and (cls.scan_is_important(cnt_hour) or random.randint(0, cls.random_scan) == 0 ):
             return 1
         return -1
 
@@ -695,14 +696,14 @@ class CaptureHeap():
     def __init__(self, cfg_path):
         self.heap = []
         self.file_path = cfg_path
-        self.max_capture_parallel_count = 200
+        self.max_parallel_capture_cnt = 200
         self.load_cfg()
         self.pop_item = None
 
     #☑️ TESTED
     def load_cfg(self):
         d = MyJson.load_json_file_with_comments(self.file_path)
-        self.max_capture_parallel_count = d["max_capture_parallel_count"]
+        self.max_capture_parallel_count = d["max_parallel_capture_cnt"]
 
     #☑️ TESTED
     def delete_obsolete_items(self):
@@ -718,12 +719,12 @@ class CaptureHeap():
         #zajima me cas!!
         self.delete_obsolete_items()
         if capture_params == None: return
-        #print "self.max_capture_parallel_count", self.max_capture_parallel_count
+
         for capture_param in capture_params:
             dt = datetime.now(pytz.timezone("UTC")) + timedelta(seconds=capture_param["timeout"])
             x = (score, dt)
 
-            if( self.max_capture_parallel_count > len(self.heap) ) :
+            if( self.max_parallel_capture_cnt > len(self.heap) ) :
                 #print("push")
                 heapq.heappush(self.heap,x)
             #pokud jsou vsechny policka zabrany a
@@ -815,8 +816,6 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    #parser.add_argument("num", help="The Fibonacci number you wish to calculate.", type=int)
-    parser.add_argument("-v", "--verbose", help="Verbose output.", default="false")
     parser.add_argument("-f", "--folder", help="All input json files are taken from ../jsons/ folder if is not specified with -fp parameter", action="store_true")
     parser.add_argument("-fp", "--folder_path", help="Folder path from where are json files taken", action="store", default="../jsons/")
     parser.add_argument("-RMQ", "--RabbitMQ", help="All input json files sare taken from rabbitmq server", action="store_true")
@@ -830,7 +829,7 @@ if __name__ == '__main__':
     parser.add_argument("-no_tmm", "--no_time_machine_manager", help="Time machine manager is disable, all filter output will be printed only to STDOUT", action="store_true")
     parser.add_argument("-cfg_mapping", help="Path to mapping config", action="store", default="../config/mapping")
     parser.add_argument("-cfg", help="Path to config", action="store", default="../config/static_prices.json")
-    parser.add_argument("-cfg_scan_algorithm_parameters", help="Path to scan algorithm parameters", action="store", default="../config/scan_algorithm_parameters.json")
+    parser.add_argument("-cfg_algorithm_parameters", help="Path to scan algorithm parameters", action="store", default="../config/algorithm_parameters.json")
     parser.add_argument("-probability_db_file", help="Path to database file for probability", action="store", default="../config/probability_db")
 
     if len(sys.argv)==1:
@@ -857,7 +856,7 @@ if __name__ == '__main__':
         tmm_params = [args.time_machine_manager_hostname, args.time_machine_manager_port]
     else:
         tmm_params = []
-    filter = Filter(xarg, dispatcher_options, args.cfg, args.cfg_mapping, tmm_params, args.cfg_scan_algorithm_parameters, args.probability_db_file)
+    filter = Filter(xarg, dispatcher_options, args.cfg, args.cfg_mapping, tmm_params, args.cfg_algorithm_parameters, args.probability_db_file)
     filter.start()
     filter.join(5)
     #Shell(filter).cmdloop()
