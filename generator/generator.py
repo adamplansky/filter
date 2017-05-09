@@ -41,7 +41,7 @@ def get_randomint():
 
 #FILENAME1 = 'warden_161001_161007_sorted.json'
 FILENAME1 = 'warden_data.json'
-FILENAME1 = 'warden_01_sorted_remove_test_NEMEA'
+#FILENAME1 = 'warden_01_sorted_remove_test_NEMEA'
 
 #FILENAME1 = 'warden_161001_161007.json'
 with open(FILENAME1) as fin:

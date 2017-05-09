@@ -332,6 +332,8 @@ class AlertDatabase:
 
     #☑️ TESTED
     def get_static_price_from_cfg(self, category):
+        if category == "":
+            return -1
         try:
             return self.database_cfg[category]["Score"]
         except Exception:
@@ -569,16 +571,25 @@ class Score():
         cls.load_cfg()
         cls.random_scan = 250
 
+    @classmethod
+    def set_max_int(cls, number):
+        if number is None:
+            return -1
+        if number == -1:
+            return sys.maxint
+        else:
+            return number
     #☑️ TESTED
     @classmethod
     def load_cfg(cls):
+
         d = MyJson.load_json_file_with_comments(cls.file_path)
-        print("d:",d)
-        cls.modulo = d["every"]
-        cls.p = d["every"] - d["first"]
+        print 'd["every"]',d["every"],'d["first"]',d["first"]
+        cls.modulo = cls.set_max_int(d["every"])
+        cls.p = d["every"] - cls.set_max_int(d["first"])
         cls.limit = d["limit"]
         cls.max_parallel_capture_cnt = d["max_parallel_capture_cnt"]
-        cls.random_scan = d["random_scan"]
+        cls.random_scan = cls.set_max_int(d["random_scan"])
 
 
     #☑️ TESTED
@@ -703,7 +714,7 @@ class CaptureHeap():
     #☑️ TESTED
     def load_cfg(self):
         d = MyJson.load_json_file_with_comments(self.file_path)
-        self.max_capture_parallel_count = d["max_parallel_capture_cnt"]
+        self.max_parallel_capture_cnt = d["max_parallel_capture_cnt"]
 
     #☑️ TESTED
     def delete_obsolete_items(self):

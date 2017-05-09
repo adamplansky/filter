@@ -32,12 +32,12 @@ class MyTest(unittest.TestCase):
 
     def test_get_static_price_from_cfg(self):
         self.assertEqual(self.ad.get_static_price('Recon.Scanning'), 1)
-        self.assertEqual(self.ad.get_static_price("UNDEFINEDCATEGORY"), 10)
+        self.assertEqual(self.ad.get_static_price("UNDEFINEDCATEGORY"), 5)
 
     def test_get_static_price(self):
         self.assertEqual(self.ad.get_static_price(u'Recon.Scanning'), 1)
         self.assertEqual(self.ad.get_static_price([u'Recon.Scanning']), 1)
-        self.assertEqual(self.ad.get_static_price(['Recon.Scanning','Abusive.Spam']), 10)
+        self.assertEqual(self.ad.get_static_price(['Recon.Scanning','Abusive.Spam']), 6)
 
     def test_extract_ip_and_direction(self):
         self.assertEqual(self.ad.get_static_price(u'Recon.Scanning'), 1)
@@ -150,15 +150,15 @@ class MyTest(unittest.TestCase):
         self.assertEqual(Score.scan_params(), (95, 100, 500) )
 
     def test_my_json(self):
-        d = MyJson.load_json_file_with_comments('../config/scan_algorithm_parameters.json')
-        d2 = {"first": 5,"every": 100,"limit": 500, "max_capture_parallel_count": 5}
+        d = MyJson.load_json_file_with_comments('../test/scan_algorithm_parameters.json')
+        d2 = {"first": 5,"every": 100,"limit": 500, "max_parallel_capture_cnt": 1,  "random_scan": 250}
         self.assertEqual(d,d2)
 
     def test_capture_heap(self):
         cp = CaptureHeap("../test/scan_algorithm_parameters.json")
         #d = MyJson.load_json_file_with_comments('../config/scan_algorithm_parameters.json')
         #d2 = {"first": 5,"every": 100,"limit": 500, "max_capture_parallel_count": 5}
-        self.assertEqual(cp.max_capture_parallel_count,1)
+        self.assertEqual(cp.max_parallel_capture_cnt,1)
 
     def test_get_capture_params(self):
         x = self.ad.get_capture_params("S201.214.56.9")

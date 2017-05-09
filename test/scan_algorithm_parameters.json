@@ -6,5 +6,7 @@
   "first": 5,
   "every": 100,
   "limit": 500,
-  "max_capture_parallel_count": 1
+  "max_parallel_capture_cnt": 1,
+  "random_scan": 250
+
 }
