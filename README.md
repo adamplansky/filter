@@ -10,5 +10,9 @@ To run alert generator:
 
 
 Algorithm modifications can be done in config file: config/algorithm_parameters.json
+
+
 Price modification can be done in config file: config/static_prices.json
+
+
 Mapping file is located in config/mapping
